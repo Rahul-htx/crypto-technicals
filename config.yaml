@@ -1,0 +1,15 @@
+coins: [ethereum, bitcoin, solana, chainlink]
+horizons:
+  intraday:
+    lookback_days: 30
+    granularity: 1h
+  swing:
+    lookback_days: 400   # ≈1.1 y
+    granularity: 1d
+indicators: [ema, sma, rsi, macd, bollinger, obv, atr, adx]
+export:
+  json: true
+  csv: false
+  sqlite: true
+  charts: true
+output_dir: data/runs
