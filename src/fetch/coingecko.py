@@ -4,14 +4,14 @@ from datetime import datetime
 import time
 import logging
 import os
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 import json
 
 class CoinGeckoFetcher:
     """Fetches cryptocurrency data from CoinGecko Pro API."""
     
     BASE_URL = "https://pro-api.coingecko.com/api/v3"
-    RATE_LIMIT_DELAY = 0.1  # seconds between requests (Pro API supports higher rates)
+    RATE_LIMIT_DELAY = 0.0  # seconds between requests (Pro API supports high rates)
     MAX_RETRIES = 3
     
     # CoinGecko granularity limits
@@ -215,3 +215,117 @@ class CoinGeckoFetcher:
             
         except Exception:
             return False
+    
+    def fetch_news(self, limit: int = 10) -> Dict[str, Any]:
+        """Fetch recent news headlines."""
+        
+        # Try the news endpoint, but handle if it's not available in Pro API
+        url = f"{self.BASE_URL}/news"
+        
+        try:
+            response = self.session.get(url, timeout=30)
+            if response.status_code == 422:
+                # News endpoint might not be available or have different parameters
+                self.logger.warning("News endpoint returned 422 - may not be available in Pro API")
+                return {"data": []}
+            response.raise_for_status()
+            
+            data = response.json()
+            # Ensure we have the expected structure
+            if isinstance(data, list):
+                return {"data": data[:limit]}
+            elif isinstance(data, dict) and 'data' in data:
+                return {"data": data['data'][:limit]}
+            else:
+                return {"data": []}
+            
+        except Exception as e:
+            self.logger.error(f"Failed to fetch news: {e}")
+            return {"data": []}
+    
+    def fetch_coin_metadata(self, coin_id: str) -> Dict[str, Any]:
+        """Fetch comprehensive metadata for a specific coin."""
+        
+        url = f"{self.BASE_URL}/coins/{coin_id}"
+        params = {
+            'localization': 'false',
+            'tickers': 'false',
+            'market_data': 'true',
+            'community_data': 'true',
+            'developer_data': 'true',
+            'sparkline': 'false'
+        }
+        
+        try:
+            response = self.session.get(url, params=params, timeout=30)
+            response.raise_for_status()
+            return response.json()
+            
+        except Exception as e:
+            self.logger.error(f"Failed to fetch metadata for {coin_id}: {e}")
+            return {}
+    
+    def fetch_categories(self) -> List[Dict[str, Any]]:
+        """Fetch all coin categories with market data."""
+        
+        url = f"{self.BASE_URL}/coins/categories"
+        
+        try:
+            response = self.session.get(url, timeout=30)
+            response.raise_for_status()
+            return response.json()
+            
+        except Exception as e:
+            self.logger.error(f"Failed to fetch categories: {e}")
+            return []
+    
+    def fetch_coin_tickers(self, coin_id: str) -> Dict[str, Any]:
+        """Fetch ticker/exchange data for a specific coin."""
+        
+        url = f"{self.BASE_URL}/coins/{coin_id}/tickers"
+        params = {
+            'include_exchange_logo': 'false',
+            'page': 1,
+            'order': 'volume_desc'
+        }
+        
+        try:
+            response = self.session.get(url, params=params, timeout=30)
+            response.raise_for_status()
+            return response.json()
+            
+        except Exception as e:
+            self.logger.error(f"Failed to fetch tickers for {coin_id}: {e}")
+            return {"tickers": []}
+    
+    def fetch_global_data(self) -> Dict[str, Any]:
+        """Fetch global cryptocurrency market data."""
+        
+        url = f"{self.BASE_URL}/global"
+        
+        try:
+            response = self.session.get(url, timeout=30)
+            response.raise_for_status()
+            return response.json()
+            
+        except Exception as e:
+            self.logger.error(f"Failed to fetch global data: {e}")
+            return {}
+    
+    def fetch_onchain_data(self, chain: str, coin_id: str) -> Dict[str, Any]:
+        """Fetch onchain DEX data for DeFi tokens (advanced feature)."""
+        
+        # This endpoint may vary based on CoinGecko's onchain data availability
+        url = f"{self.BASE_URL}/onchain/{chain}/coins/{coin_id}"
+        
+        try:
+            response = self.session.get(url, timeout=30)
+            if response.status_code == 404:
+                # Onchain data not available for this coin/chain
+                return {}
+            response.raise_for_status()
+            return response.json()
+            
+        except Exception as e:
+            self.logger.debug(f"Onchain data not available for {coin_id} on {chain}: {e}")
+            return {}

@@ -1,17 +1,18 @@
-# CryptoTechnicals — Technical Analysis Data Engine
+# CryptoTechnicals — Comprehensive Crypto Intelligence Engine
 
-A lightweight Python command-line tool that pulls historical price/volume data from the CoinGecko API, automatically computes a standardized bundle of technical indicators, and exports both machine-readable summaries (JSON/CSV/SQLite) and ready-to-share charts (PNG) for a watchlist of crypto assets.
+A powerful Python command-line tool that provides **complete cryptocurrency market intelligence** by combining technical analysis, fundamental data, market sentiment, sector rotation analysis, and global market trends. Designed to feed AI/LLM systems with the richest possible context for cryptocurrency analysis and trading decisions.
 
 ## 🎯 Purpose & Scope
 
 **CryptoTechnicals** is designed to:
-- Fetch historical cryptocurrency data from CoinGecko API
-- Calculate comprehensive technical indicators automatically
-- Export data in multiple formats for analysis and AI consumption
-- Generate publication-ready charts without manual intervention
-- Provide consistent, structured data for algorithmic trading research
+- **Technical Analysis**: Historical OHLCV data + 8 comprehensive technical indicators
+- **Fundamental Analysis**: Project metadata, tokenomics, development activity, community metrics
+- **Market Intelligence**: Global market trends, sector rotation, dominance analysis
+- **Sentiment Analysis**: News headlines with sentiment extraction and coin mentions
+- **Liquidity Analysis**: Exchange listings, trading venues, CEX/DEX breakdown
+- **LLM-Ready Exports**: Structured JSON/CSV/SQLite + visual charts for AI consumption
 
-Perfect for traders, researchers, and developers who need clean, analyzed crypto data without the hassle of manual data gathering and indicator calculation.
+Perfect for **AI-powered trading systems**, researchers, and analysts who need the **most comprehensive crypto market context** available, all automated and ready for LLM analysis.
 
 ## 🚀 Quick Start
 
@@ -19,14 +20,17 @@ Perfect for traders, researchers, and developers who need clean, analyzed crypto
 
 ```bash
 # Clone the repository
-git clone <repository-url>
-cd crypto_technicals
+git clone https://github.com/Rahul-htx/crypto-technicals.git
+cd crypto-technicals
 
 # Install dependencies
 pip install -r requirements.txt
 
-# Or install with development dependencies
-pip install -e ".[dev]"
+# Set up your CoinGecko Pro API key
+echo "COINGECKO_API_KEY=your_api_key_here" > .env
+
+# Test installation
+python -m src.cli --coins bitcoin --horizons intraday --verbose
 ```
 
 ### Basic Usage
@@ -48,42 +52,83 @@ python -m src.cli --verbose
 python -m src.cli --output-dir /path/to/custom/output
 ```
 
-## 📊 Sample Outputs
+## 📊 Comprehensive Data Outputs
 
-### JSON Export
+### Complete Market Intelligence Package
+Every run generates **6 categories of market data** for maximum LLM context:
+
+```
+data/runs/20250819_182216/
+├── Technical Analysis:
+│   ├── intraday/ & swing/ (OHLCV + 8 indicators)
+│   ├── crypto_technicals_*.db (SQLite databases)
+│   └── charts/ (technical analysis PNGs)
+│
+└── Market Intelligence:
+    ├── news.json (sentiment catalysts)
+    ├── metadata.json (project fundamentals)
+    ├── categories.json (sector rotation)
+    ├── global.json (macro trends)
+    └── tickers.json (liquidity analysis)
+```
+
+### Sample Outputs
+
+**Technical Data** (per coin):
 ```json
 {
-  "metadata": {
-    "coin": "bitcoin",
-    "horizon": "intraday", 
-    "granularity": "1h",
-    "lookback_days": 30,
-    "total_candles": 720
-  },
   "latest_values": {
-    "close": 43250.67,
-    "rsi_14": 58.23,
-    "macd": 125.45,
-    "bb_percent_b": 0.67
-  },
-  "summary": {
-    "price_change_pct": 2.34,
-    "volume_mean": 1250000000
+    "close": 43250.67, "rsi_14": 58.23, "macd": 125.45,
+    "bb_percent_b": 0.67, "adx_14": 32.1, "obv": 1.2e9
   }
 }
 ```
 
-### Chart Output
-- **3-panel PNG charts** showing price + EMAs, RSI, and MACD
-- **Multi-coin comparison charts** for relative analysis
-- **High-resolution outputs** suitable for reports and presentations
+**Global Market Intelligence**:
+```json
+{
+  "market_overview": {
+    "total_market_cap_usd": 3882142856426.52,
+    "bitcoin_dominance_percentage": 57.94,
+    "ethereum_dominance_percentage": 12.80
+  },
+  "dominance_analysis": {
+    "dominance_signals": [{
+      "type": "btc_dominance_high",
+      "description": "Bitcoin dominance at 57.9% suggests market seeking safety",
+      "implication": "bearish_for_alts"
+    }]
+  }
+}
+```
+
+**Sector Rotation Analysis**:
+```json
+{
+  "sector_analysis": {
+    "top_performers_24h": [
+      {"name": "Trading Bots", "market_cap_change_24h": 201.67},
+      {"name": "DeFi", "market_cap_change_24h": 15.42}
+    ],
+    "sector_rotation_signals": [{
+      "signal_type": "sector_breakout",
+      "strength": "high"
+    }]
+  }
+}
+```
+
+### Visual Outputs
+- **Multi-panel technical charts** (price + EMAs, RSI, MACD)
+- **Sector comparison charts** for rotation analysis
+- **High-resolution PNGs** ready for reports and presentations
 
 ## ⚙️ Configuration
 
 Edit `config.yaml` to customize your analysis:
 
 ```yaml
-coins: [eth, btc, sol, link, ada]
+coins: [ethereum, bitcoin, solana, chainlink, ripple, cardano]
 horizons:
   intraday:
     lookback_days: 30
@@ -91,17 +136,35 @@ horizons:
   swing:
     lookback_days: 400
     granularity: 1d
-indicators: [ema, sma, rsi, macd, bollinger, atr, adx, obv]
+indicators: [ema, sma, rsi, macd, bollinger, obv, atr, adx]
 export:
   json: true
   csv: false
   sqlite: true
   charts: true
-output_dir: data/runs
+
+# Enhanced Market Intelligence Collection
+market_data:
+  collect_news: true              # News headlines for sentiment
+  collect_metadata: true          # Project fundamentals & dev activity
+  collect_categories: true        # Sector rotation analysis
+  collect_global: true           # Market cap, dominance, macro trends
+  collect_tickers: true          # Exchange listings & liquidity
+  collect_onchain: false         # DEX data (advanced, when available)
+  
+  news_limit: 20                 # Headlines per run
+  
+  update_frequencies:            # Control data collection frequency
+    news: "every_run"
+    metadata: "daily"
+    categories: "every_run"
+    global: "every_run"
+    tickers: "weekly"
 ```
 
-### Supported Indicators
+### Comprehensive Data Sources
 
+#### **Technical Analysis**
 | Category | Indicators | Parameters |
 |----------|------------|------------|
 | **Trend** | EMA, SMA | 20, 50, 200 periods |
@@ -110,11 +173,20 @@ output_dir: data/runs
 | **Trend Strength** | ADX | ADX(14) |
 | **Volume** | OBV | OBV + 20-period EMA |
 
-### Supported Timeframes
+#### **Market Intelligence**
+| Data Type | Source | Content |
+|-----------|--------|---------|
+| **News** | CoinGecko News API | Headlines, sentiment extraction, coin mentions |
+| **Metadata** | Coin Details API | Project info, tokenomics, dev activity, social metrics |
+| **Categories** | Categories API | Sector performance, rotation signals, momentum analysis |
+| **Global** | Global Stats API | Market cap, dominance, volume trends, sentiment |
+| **Tickers** | Exchange API | Liquidity analysis, CEX/DEX breakdown, trading venues |
+| **Onchain** | Onchain API* | DEX data, pool flows (*when available) |
 
-- **1h**: Hourly data (available for last 30 days)
-- **4h**: 4-hour data (available for last 30 days)  
-- **1d**: Daily data (available for 365+ days)
+#### **Timeframes**
+- **1h**: Hourly data (30 days) for intraday analysis
+- **1d**: Daily data (400 days) for swing/position analysis
+- **Real-time**: Market intelligence updated every run
 
 ## 📁 Output Structure
 
@@ -210,34 +282,46 @@ pipeline.run(['bitcoin', 'ethereum'], 'intraday')
 
 ## 🔍 Performance
 
-**Benchmark Results** (MacBook Pro M1):
-- 20 coins, 90-day hourly data: **< 60 seconds**
-- 5 coins, 400-day daily data: **< 30 seconds**  
-- Full indicator suite calculation: **< 5 seconds per coin**
+**Benchmark Results** (CoinGecko Pro API):
+- **6 coins, 2 horizons + full market intelligence**: **~35 seconds**
+- **24 API calls** (12 OHLCV + 12 market data): **No rate limiting**
+- **6,690 total data points**: 4,290 hourly + 2,400 daily candles
+- **Comprehensive market context**: Technical + fundamental + sentiment + macro data
 
 ## 🚧 Known Limitations
 
-1. **CoinGecko Rate Limits**: 1.2 second delays between requests
-2. **Granularity Constraints**: Hourly data limited to 30 days via API
-3. **No Real-time Data**: Historical data only, no streaming capabilities
-4. **Chart Dependencies**: Requires matplotlib and seaborn for visualization
+1. **CoinGecko Pro Required**: Free tier has severe rate limits (~5 calls before blocking)
+2. **News API Limitations**: News endpoint may have limited availability on some Pro plans
+3. **Onchain Data**: Advanced DEX data may require additional API endpoints
+4. **Data Volume**: Full runs generate significant data (~50MB+ for 6 coins with all intelligence)
 
 ## 🔮 Future Extensions
 
-- **Exchange Integration**: Direct Binance/Coinbase Pro API support
-- **On-chain Metrics**: Glassnode integration for network indicators  
-- **Real-time Streaming**: WebSocket connections for live data
-- **Advanced Analytics**: ML-based pattern recognition
-- **Portfolio Tracking**: Multi-asset correlation analysis
+- **Real-time Streaming**: WebSocket integration for live market data
+- **Advanced AI Integration**: Built-in LLM analysis and trade signal generation
+- **DeFi Protocol Data**: TVL, yield farming, liquidity pool analytics
+- **Social Sentiment**: Twitter, Reddit, Discord sentiment analysis
+- **Portfolio Optimization**: Risk metrics, correlation analysis, position sizing
+- **Automated Trading**: Signal execution via exchange APIs
 
 ## 📝 Changelog
 
+### v0.2.0 (2025-08-19) - **MAJOR EXPANSION**
+- **🎯 Comprehensive Market Intelligence Pipeline**
+- Added news sentiment analysis with coin mention detection
+- Added complete project metadata (fundamentals, dev activity, community)
+- Added sector rotation analysis with momentum signals
+- Added global market trends and dominance analysis
+- Added exchange liquidity analysis (CEX/DEX breakdown)
+- **CoinGecko Pro API integration** (zero rate limiting)
+- **LLM-optimized data exports** for AI analysis
+- Enhanced configuration with granular data collection control
+
 ### v0.1.0 (2023-12-01)
-- Initial release
-- Core technical indicators implemented
-- Multi-format export support
-- Comprehensive charting capabilities
-- Full test coverage
+- Initial technical analysis engine
+- Core technical indicators (EMA, SMA, RSI, MACD, Bollinger, ATR, ADX, OBV)
+- Multi-format export (JSON, CSV, SQLite, PNG)
+- Professional charting capabilities
 
 ## 👥 Contributing
 
