@@ -3,14 +3,15 @@ import pandas as pd
 from datetime import datetime
 import time
 import logging
+import os
 from typing import Optional, Dict, Any
 import json
 
 class CoinGeckoFetcher:
-    """Fetches cryptocurrency data from CoinGecko API."""
+    """Fetches cryptocurrency data from CoinGecko Pro API."""
     
-    BASE_URL = "https://api.coingecko.com/api/v3"
-    RATE_LIMIT_DELAY = 1.2  # seconds between requests
+    BASE_URL = "https://pro-api.coingecko.com/api/v3"
+    RATE_LIMIT_DELAY = 0.1  # seconds between requests (Pro API supports higher rates)
     MAX_RETRIES = 3
     
     # CoinGecko granularity limits
@@ -23,9 +24,18 @@ class CoinGeckoFetcher:
     def __init__(self, logger: logging.Logger):
         self.logger = logger
         self.session = requests.Session()
+        
+        # Get API key from environment
+        api_key = os.getenv("COINGECKO_API_KEY")
+        if not api_key:
+            raise ValueError("COINGECKO_API_KEY environment variable is required for Pro API access")
+        
         self.session.headers.update({
-            'User-Agent': 'CryptoTechnicals/1.0 (Educational Purpose)'
+            'User-Agent': 'CryptoTechnicals/1.0 (Educational Purpose)',
+            'x-cg-pro-api-key': api_key
         })
+        
+        self.logger.info("Initialized CoinGecko Pro API client")
     
     def fetch_ohlcv(
         self, 

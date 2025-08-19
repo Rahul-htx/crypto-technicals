@@ -1,8 +1,10 @@
 import click
 import sys
+import os
 from datetime import datetime
 from pathlib import Path
 from typing import List, Optional
+from dotenv import load_dotenv
 
 from .config_loader import Config
 from .pipeline import Pipeline
@@ -46,9 +48,18 @@ def main(
     """
     CryptoTechnicals - Technical Analysis Data Engine
     
-    Pulls historical price/volume data from CoinGecko API and computes
+    Pulls historical price/volume data from CoinGecko Pro API and computes
     technical indicators for cryptocurrency assets.
     """
+    
+    # Load environment variables from .env file
+    load_dotenv()
+    
+    # Check for required API key
+    if not os.getenv("COINGECKO_API_KEY"):
+        click.echo("Error: COINGECKO_API_KEY environment variable is required.")
+        click.echo("Please set your CoinGecko Pro API key in a .env file or environment variable.")
+        sys.exit(1)
     
     # Setup logging
     logger = setup_logger(verbose)
