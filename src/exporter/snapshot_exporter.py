@@ -16,11 +16,12 @@ class SnapshotExporter:
     - Long-horizon stats: if >24 hours since last update
     """
     
-    def __init__(self, output_dir: Path, logger: logging.Logger):
+    def __init__(self, output_dir: Path, logger: logging.Logger, fetcher=None):
         self.output_dir = Path(output_dir)
         self.snapshots_dir = self.output_dir.parent / "snapshots"
         self.snapshots_dir.mkdir(parents=True, exist_ok=True)
         self.logger = logger
+        self.fetcher = fetcher  # CoinGecko fetcher for market data
         
         # Paths for snapshot files
         self.latest_snapshot_path = self.snapshots_dir / "latest_snapshot.json"
@@ -58,13 +59,17 @@ class SnapshotExporter:
         
         self.logger.info(f"Snapshot export [{horizon}]: history={include_history}, long_stats={include_long_stats}")
         
+        # Fetch fresh market data for snapshot
+        markets_data = self._fetch_markets_data(coins)
+        global_market_data = self._fetch_global_market_data()
+        
         # Build horizon-specific payload
         horizon_payload = {
             "meta": self._build_meta_section(now, horizon, granularity, coins, 
                                            include_history, include_long_stats),
-            "market_overview": self._build_market_overview(existing_horizon_data),
+            "market_overview": self._build_market_overview(global_market_data),
             "cross_coin": self._build_cross_coin_analysis(results),
-            "coins": self._build_coins_section(results, include_history, include_long_stats),
+            "coins": self._build_coins_section(results, markets_data, include_history, include_long_stats),
             "news": self._build_news_section(existing_horizon_data)
         }
         
@@ -213,10 +218,54 @@ class SnapshotExporter:
             }
         }
     
-    def _build_market_overview(self, existing_horizon_data: Optional[Dict[str, Any]]) -> Dict[str, Any]:
-        """Build market overview section from existing global data."""
+    def _build_market_overview(self, global_market_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Build market overview section from fresh global market data."""
         
-        # Try to load from market_context.json in the run directory
+        overview = {}
+        
+        if global_market_data and 'data' in global_market_data:
+            data = global_market_data['data']
+            
+            # Extract total market cap
+            if 'total_market_cap' in data and 'usd' in data['total_market_cap']:
+                overview['total_market_cap_usd'] = data['total_market_cap']['usd']
+            
+            # Extract market cap percentages (BTC dominance)
+            if 'market_cap_percentage' in data:
+                market_cap_pct = data['market_cap_percentage']
+                if 'btc' in market_cap_pct:
+                    overview['btc_dominance_pct'] = market_cap_pct['btc']
+                if 'eth' in market_cap_pct:
+                    overview['eth_dominance_pct'] = market_cap_pct['eth']
+            
+            # Extract other useful global metrics
+            if 'active_cryptocurrencies' in data:
+                overview['active_cryptocurrencies'] = data['active_cryptocurrencies']
+            
+            if 'markets' in data:
+                overview['markets'] = data['markets']
+            
+            # Extract total volume
+            if 'total_volume' in data and 'usd' in data['total_volume']:
+                overview['total_volume_24h_usd'] = data['total_volume']['usd']
+            
+            # Calculate market cap change if available
+            if 'market_cap_change_percentage_24h_usd' in data:
+                overview['market_cap_change_24h_pct'] = data['market_cap_change_percentage_24h_usd']
+            
+            # Derive sentiment from BTC dominance
+            btc_dom = overview.get('btc_dominance_pct', 50)
+            overview['sentiment'] = 'risk_off' if btc_dom > 50 else 'risk_on'
+        
+        # Fallback to market_context.json if no fresh data
+        if not overview:
+            overview = self._build_market_overview_fallback()
+        
+        return overview
+    
+    def _build_market_overview_fallback(self) -> Dict[str, Any]:
+        """Fallback: Build market overview from existing market_context.json."""
+        
         market_context_path = self.output_dir / "market_context.json"
         
         if market_context_path.exists():
@@ -235,15 +284,6 @@ class SnapshotExporter:
                 # Derive sentiment from BTC dominance
                 btc_dom = overview.get('btc_dominance_pct', 50)
                 overview['sentiment'] = 'risk_off' if btc_dom > 50 else 'risk_on'
-                
-                # Extract top sectors
-                overview['sector_leaders_24h'] = []
-                if 'sector_analysis' in market_context and 'sector_analysis' in market_context['sector_analysis']:
-                    sectors = market_context['sector_analysis']['sector_analysis'].get('top_performers_24h', [])
-                    overview['sector_leaders_24h'] = [
-                        {"name": s.get('name', ''), "perf_pct": s.get('market_cap_change_24h', 0)}
-                        for s in sectors[:3]
-                    ]
                 
                 return overview
                 
@@ -295,8 +335,8 @@ class SnapshotExporter:
         }
     
     def _build_coins_section(self, results: Dict[str, Dict[str, Any]], 
-                           include_history: bool, include_long_stats: bool) -> Dict[str, Any]:
-        """Build coins data section with categorical signals."""
+                           markets_data: Dict[str, Any], include_history: bool, include_long_stats: bool) -> Dict[str, Any]:
+        """Build coins data section with categorical signals and market data."""
         
         coins_data = {}
         
@@ -307,23 +347,36 @@ class SnapshotExporter:
                 
             latest = df.iloc[-1]
             
-            # Calculate percentage changes
+            # Get market data for this coin
+            market_data = markets_data.get(coin, {})
+            
+            # Use market data price changes if available, otherwise calculate from OHLCV
             pct_changes = {}
-            if len(df) >= 2:
-                pct_changes['1h'] = ((latest['close'] - df['close'].iloc[-2]) / df['close'].iloc[-2]) * 100 if len(df) >= 2 else 0
-            if len(df) >= 24:  # 24 hours ago (assuming hourly data)
-                pct_changes['24h'] = ((latest['close'] - df['close'].iloc[-24]) / df['close'].iloc[-24]) * 100
-            elif len(df) >= 2:
-                pct_changes['24h'] = ((latest['close'] - df['close'].iloc[0]) / df['close'].iloc[0]) * 100
-            if len(df) >= 168:  # 7 days ago (assuming hourly data)
-                pct_changes['7d'] = ((latest['close'] - df['close'].iloc[-168]) / df['close'].iloc[-168]) * 100
-            elif len(df) >= 2:
-                pct_changes['7d'] = ((latest['close'] - df['close'].iloc[0]) / df['close'].iloc[0]) * 100
+            if market_data:
+                pct_changes['1h'] = market_data.get('price_change_percentage_1h_in_currency', 0)
+                pct_changes['24h'] = market_data.get('price_change_percentage_24h_in_currency', 0)  
+                pct_changes['7d'] = market_data.get('price_change_percentage_7d_in_currency', 0)
+            else:
+                # Fallback to calculating from OHLCV data
+                if len(df) >= 2:
+                    pct_changes['1h'] = ((latest['close'] - df['close'].iloc[-2]) / df['close'].iloc[-2]) * 100
+                if len(df) >= 24:  # 24 hours ago (assuming hourly data)
+                    pct_changes['24h'] = ((latest['close'] - df['close'].iloc[-24]) / df['close'].iloc[-24]) * 100
+                elif len(df) >= 2:
+                    pct_changes['24h'] = ((latest['close'] - df['close'].iloc[0]) / df['close'].iloc[0]) * 100
+                if len(df) >= 168:  # 7 days ago (assuming hourly data)
+                    pct_changes['7d'] = ((latest['close'] - df['close'].iloc[-168]) / df['close'].iloc[-168]) * 100
+                elif len(df) >= 2:
+                    pct_changes['7d'] = ((latest['close'] - df['close'].iloc[0]) / df['close'].iloc[0]) * 100
             
             coin_data = {
                 "price": float(latest['close']),
                 "pct_change": pct_changes
             }
+            
+            # Add market & supply metrics from CoinGecko markets API
+            if market_data:
+                self._add_market_metrics(coin_data, market_data)
             
             # Add indicators with categorical signals
             self._add_indicator_signals(coin_data, df, latest)
@@ -335,6 +388,52 @@ class SnapshotExporter:
             coins_data[coin] = coin_data
         
         return coins_data
+    
+    def _add_market_metrics(self, coin_data: Dict[str, Any], market_data: Dict[str, Any]) -> None:
+        """Add market cap, supply, and other metrics from CoinGecko markets API."""
+        
+        # Market cap
+        if 'market_cap' in market_data and market_data['market_cap']:
+            coin_data['market_cap_usd'] = market_data['market_cap']
+        
+        # Supply metrics
+        if 'circulating_supply' in market_data and market_data['circulating_supply']:
+            coin_data['circulating_supply'] = market_data['circulating_supply']
+        
+        if 'total_supply' in market_data and market_data['total_supply']:
+            coin_data['total_supply'] = market_data['total_supply']
+        
+        if 'max_supply' in market_data and market_data['max_supply']:
+            coin_data['max_supply'] = market_data['max_supply']
+        
+        # Volume
+        if 'total_volume' in market_data and market_data['total_volume']:
+            coin_data['volume_24h_usd'] = market_data['total_volume']
+        
+        # Market cap rank
+        if 'market_cap_rank' in market_data and market_data['market_cap_rank']:
+            coin_data['market_cap_rank'] = market_data['market_cap_rank']
+        
+        # Fully diluted valuation
+        if 'fully_diluted_valuation' in market_data and market_data['fully_diluted_valuation']:
+            coin_data['fully_diluted_valuation_usd'] = market_data['fully_diluted_valuation']
+        
+        # Calculate supply metrics
+        circulating = coin_data.get('circulating_supply', 0)
+        total = coin_data.get('total_supply', 0)
+        max_supply = coin_data.get('max_supply', 0)
+        
+        if circulating and total and circulating > 0:
+            coin_data['supply_circulation_pct'] = round((circulating / total) * 100, 2)
+        
+        if circulating and max_supply and circulating > 0 and max_supply > 0:
+            coin_data['supply_inflation_remaining_pct'] = round(((max_supply - circulating) / max_supply) * 100, 2)
+        
+        # Volume/market cap ratio
+        volume = coin_data.get('volume_24h_usd', 0)
+        market_cap = coin_data.get('market_cap_usd', 0)
+        if volume and market_cap and market_cap > 0:
+            coin_data['volume_mcap_ratio'] = round(volume / market_cap, 4)
     
     def _add_indicator_signals(self, coin_data: Dict[str, Any], df: pd.DataFrame, latest: pd.Series) -> None:
         """Add indicator values and categorical signals."""
@@ -486,3 +585,31 @@ class SnapshotExporter:
             json.dump(snapshot, f, indent=2, default=str)
         
         self.logger.debug(f"Wrote timestamped snapshot: {timestamped_path}")
+    
+    def _fetch_markets_data(self, coins: List[str]) -> Dict[str, Any]:
+        """Fetch fresh market data for coins."""
+        if not self.fetcher:
+            self.logger.warning("No CoinGecko fetcher available for market data")
+            return {}
+        
+        try:
+            markets_data = self.fetcher.fetch_markets_data(coins)
+            self.logger.debug(f"Fetched market data for {len(markets_data)} coins")
+            return markets_data
+        except Exception as e:
+            self.logger.error(f"Failed to fetch markets data for snapshot: {e}")
+            return {}
+    
+    def _fetch_global_market_data(self) -> Dict[str, Any]:
+        """Fetch fresh global market data."""
+        if not self.fetcher:
+            self.logger.warning("No CoinGecko fetcher available for global market data")
+            return {}
+        
+        try:
+            global_data = self.fetcher.fetch_global_market_data()
+            self.logger.debug("Fetched global market data")
+            return global_data
+        except Exception as e:
+            self.logger.error(f"Failed to fetch global market data for snapshot: {e}")
+            return {}

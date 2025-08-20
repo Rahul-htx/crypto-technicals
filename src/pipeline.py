@@ -39,7 +39,7 @@ class Pipeline:
         self.tickers_exporter = TickersExporter(self.output_dir)
         self.global_exporter = GlobalExporter(self.output_dir)
         self.market_context_exporter = MarketContextExporter(self.output_dir)
-        self.snapshot_exporter = SnapshotExporter(self.output_dir, logger)
+        self.snapshot_exporter = SnapshotExporter(self.output_dir, logger, self.fetcher)
     
     def run(self, coins: List[str], horizon: str, force_hourly: bool = False, force_daily: bool = False) -> None:
         """Run the complete pipeline for given coins and horizon."""

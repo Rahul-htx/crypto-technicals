@@ -1,4 +1,4 @@
-coins: [ethereum, bitcoin, solana, chainlink, ripple, tron]
+coins: [ethereum, bitcoin, solana, chainlink, ripple, tron, sui]
 horizons:
   intraday:
     lookback_days: 30

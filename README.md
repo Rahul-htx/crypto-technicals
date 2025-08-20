@@ -140,7 +140,7 @@ data/runs/20250819_185950/
 Edit `config.yaml` to customize your analysis:
 
 ```yaml
-coins: [ethereum, bitcoin, solana, chainlink, ripple, cardano]
+coins: [ethereum, bitcoin, solana, chainlink, ripple, tron, sui]
 horizons:
   intraday:
     lookback_days: 30
@@ -221,35 +221,47 @@ data/
     └── snapshot_swing_2025-08-19T22-24-53Z.json
 ```
 
-### 🆕 Combined Snapshot System
+### 🆕 Combined Snapshot System with Market Intelligence
 
-The **combined snapshot** (`data/snapshots/latest_snapshot.json`) is designed for LLM analysis:
+The **combined snapshot** (`data/snapshots/latest_snapshot.json`) is designed for comprehensive LLM analysis:
 
 ```json
 {
   "meta": {
-    "last_updated": "2025-08-19T22:25:21Z",
+    "last_updated": "2025-08-19T22:50:32Z",
     "horizons_present": ["intraday", "swing"],
-    "coins_tracked": ["ethereum", "bitcoin", "solana", ...]
+    "coins_tracked": ["ethereum", "bitcoin", "solana", "chainlink", "ripple", "tron", "sui"]
   },
   "intraday": {
     "meta": { "granularity": "1h", "run_timestamp": "..." },
+    "market_overview": {
+      "total_market_cap_usd": 3899134713516.64,
+      "btc_dominance_pct": 57.95,
+      "eth_dominance_pct": 12.84,
+      "total_volume_24h_usd": 168189064707.82,
+      "market_cap_change_24h_pct": -1.26,
+      "sentiment": "risk_off"
+    },
     "coins": { 
       "ethereum": { 
-        "price": 4150.53, 
+        "price": 4150.54,
+        "market_cap_usd": 500029793189,
+        "circulating_supply": 120707692.09,
+        "volume_24h_usd": 41980540031,
+        "market_cap_rank": 2,
+        "volume_mcap_ratio": 0.084,
+        "supply_circulation_pct": 100.0,
         "rsi_14": 35.5, "rsi_state": "neutral",
         "macd_hist": -7.3, "macd_state": "neutral",
-        "pct_change": { "1h": -0.2, "24h": -4.5, "7d": -9.4 }
-      }
-    }
-  },
-  "swing": {
-    "meta": { "granularity": "1d", "run_timestamp": "..." },
-    "coins": { 
-      "ethereum": { 
-        "price": 4317.28,
-        "rsi_14": 60.1, "rsi_state": "neutral", 
-        "macd_hist": 0.57, "macd_state": "neutral"
+        "pct_change": { "1h": 0.32, "24h": -1.94, "7d": -9.48 }
+      },
+      "bitcoin": {
+        "price": 113414.51,
+        "market_cap_usd": 2258867654421,
+        "max_supply": 21000000.0,
+        "supply_inflation_remaining_pct": 5.2,
+        "volume_mcap_ratio": 0.0209,
+        "trend_strength": "strong"
       }
     }
   }
@@ -257,11 +269,13 @@ The **combined snapshot** (`data/snapshots/latest_snapshot.json`) is designed fo
 ```
 
 **Key Features**:
-- **Single file**: All timeframes in one place, no confusion
-- **Data preservation**: Running intraday doesn't overwrite swing data
-- **Smart freshness**: Only updates when crossing meaningful time boundaries
-- **LLM-ready**: Categorical signals (overbought/oversold) + raw values
-- **Compact**: ~20KB for 6 coins, 2 horizons vs 100s of KB in raw exports
+- **🌍 Global market context**: Total market cap, dominance, volume, sentiment
+- **💰 Comprehensive coin metrics**: Market cap, supply dynamics, liquidity ratios
+- **📊 Fresh market data**: Real-time supply/market metrics from CoinGecko markets API
+- **🔄 Multi-horizon preservation**: Intraday and swing data coexist without conflicts
+- **🤖 LLM-optimized**: Categorical signals + raw values + market fundamentals
+- **⚡ Smart freshness**: Only updates when crossing meaningful time boundaries
+- **📦 Compact**: ~35KB for 7 coins, 2 horizons with full market intelligence
 
 **Key Improvements**:
 - **70% fewer files**: Aggregated format reduces clutter
@@ -343,11 +357,12 @@ pipeline.run(['bitcoin', 'ethereum'], 'intraday')
 ## 🔍 Performance
 
 **Benchmark Results** (CoinGecko Pro API):
-- **6 coins, 2 horizons + market intelligence**: **~35 seconds**
-- **20+ API calls** (12 OHLCV + 8+ market data): **No rate limiting**
-- **6,690 total data points**: 4,290 hourly + 2,400 daily candles
-- **Streamlined output**: 4-6 files instead of 15+ files per run
-- **Comprehensive market context**: Technical + fundamental + macro data (news excluded due to API limitation)
+- **7 coins, 2 horizons + market intelligence**: **~40 seconds**
+- **22+ API calls** (14 OHLCV + 8+ market data): **No rate limiting**
+- **7,805 total data points**: 5,005 hourly + 2,800 daily candles
+- **Rich market data**: Market cap, supply metrics, liquidity ratios for all coins
+- **Streamlined output**: 4-6 files instead of 20+ files per run
+- **Complete market context**: Technical + fundamental + supply + macro data
 
 ## 🚧 Known Limitations
 
@@ -366,6 +381,16 @@ pipeline.run(['bitcoin', 'ethereum'], 'intraday')
 - **Automated Trading**: Signal execution via exchange APIs
 
 ## 📝 Changelog
+
+### v0.3.1 (2025-08-19) - **MARKET & SUPPLY METRICS INTEGRATION**
+- **🌍 Global Market Intelligence**: Real-time total market cap, BTC/ETH dominance, volume trends
+- **💰 Comprehensive Coin Metrics**: Market cap, circulating/total/max supply, fully diluted valuation
+- **📊 Fresh Market Data**: Direct CoinGecko markets API integration for accurate supply metrics
+- **⚡ Supply Analytics**: Circulation percentages, inflation remaining, volume/market cap ratios
+- **🎯 Expanded Coverage**: Added Tron and Sui to default coin tracking (7 total coins)
+- **🔄 Enhanced Snapshots**: Combined multi-horizon files now include full market context
+- **📈 LLM-Optimized**: Complete fundamental analysis data alongside technical indicators
+- Real-time market data fetching on every snapshot export
 
 ### v0.2.1 (2025-08-19) - **PIPELINE OPTIMIZATION**
 - **🎯 Streamlined Output Structure**

@@ -329,3 +329,69 @@ class CoinGeckoFetcher:
         except Exception as e:
             self.logger.debug(f"Onchain data not available for {coin_id} on {chain}: {e}")
             return {}
+    
+    def fetch_markets_data(self, coin_ids: List[str]) -> Dict[str, Any]:
+        """
+        Fetch market data for multiple coins including market cap, supply, and price changes.
+        
+        Args:
+            coin_ids: List of CoinGecko coin IDs
+            
+        Returns:
+            Dictionary with coin_id as key and market data as value
+        """
+        if not coin_ids:
+            return {}
+            
+        url = f"{self.BASE_URL}/coins/markets"
+        params = {
+            'vs_currency': 'usd',
+            'ids': ','.join(coin_ids),
+            'price_change_percentage': '1h,24h,7d',
+            'order': 'market_cap_desc',
+            'per_page': len(coin_ids),
+            'page': 1,
+            'sparkline': 'false',
+            'locale': 'en'
+        }
+        
+        try:
+            response = self.session.get(url, params=params, timeout=30)
+            response.raise_for_status()
+            
+            data = response.json()
+            
+            # Convert list response to dictionary keyed by coin_id
+            markets_data = {}
+            for coin_data in data:
+                coin_id = coin_data.get('id')
+                if coin_id:
+                    markets_data[coin_id] = coin_data
+                    
+            self.logger.info(f"Fetched market data for {len(markets_data)} coins")
+            return markets_data
+            
+        except Exception as e:
+            self.logger.error(f"Failed to fetch markets data: {e}")
+            return {}
+    
+    def fetch_global_market_data(self) -> Dict[str, Any]:
+        """
+        Fetch global cryptocurrency market data.
+        
+        Returns:
+            Dictionary containing global market statistics
+        """
+        url = f"{self.BASE_URL}/global"
+        
+        try:
+            response = self.session.get(url, timeout=30)
+            response.raise_for_status()
+            
+            data = response.json()
+            self.logger.info("Fetched global market data")
+            return data
+            
+        except Exception as e:
+            self.logger.error(f"Failed to fetch global market data: {e}")
+            return {}
