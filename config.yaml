@@ -11,24 +11,25 @@ export:
   json: true
   csv: false
   sqlite: true
-  charts: true
+  charts: false
+  individual_coin_files: false    # Only export aggregated files by default
 output_dir: data/runs
 
 # Enhanced data collection settings
 market_data:
-  collect_news: true              # Fetch news headlines for sentiment analysis
+  collect_news: false             # CoinGecko Pro API does not provide reliable news headlines
   collect_metadata: true          # Fetch comprehensive coin metadata
   collect_categories: true        # Fetch sector/category data for rotation analysis
   collect_global: true           # Fetch global market data and dominance
   collect_tickers: true          # Fetch exchange/liquidity data (less frequent)
   collect_onchain: false         # Fetch onchain DEX data (advanced, may not be available)
   
-  # News settings
-  news_limit: 20                 # Number of news articles to fetch
+  # News settings (disabled - CoinGecko API limitation)
+  # news_limit: 20               # Number of news articles to fetch
   
   # Update frequencies (used by scheduling logic)
   update_frequencies:
-    news: "every_run"            # every_run, daily, weekly
+    # news: "every_run"          # disabled - CoinGecko API limitation
     metadata: "daily"            # every_run, daily, weekly  
     categories: "every_run"      # every_run, daily, weekly
     global: "every_run"          # every_run, daily, weekly

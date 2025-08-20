@@ -41,6 +41,9 @@ class Config:
     def should_export(self, format_type: str) -> bool:
         return self.export_settings.get(format_type, False)
     
+    def should_export_individual_coin_files(self) -> bool:
+        return self.export_settings.get('individual_coin_files', False)
+    
     @property
     def market_data_settings(self) -> Dict[str, Any]:
         return self._config.get('market_data', {})

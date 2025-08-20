@@ -15,6 +15,7 @@ from .exporter.metadata_exporter import MetadataExporter
 from .exporter.categories_exporter import CategoriesExporter
 from .exporter.tickers_exporter import TickersExporter
 from .exporter.global_exporter import GlobalExporter
+from .exporter.market_context_exporter import MarketContextExporter
 from .config_loader import Config
 
 class Pipeline:
@@ -25,7 +26,7 @@ class Pipeline:
         
         # Initialize components
         self.fetcher = CoinGeckoFetcher(logger)
-        self.json_exporter = JSONExporter(self.output_dir)
+        self.json_exporter = JSONExporter(self.output_dir, config)
         self.csv_exporter = CSVExporter(self.output_dir)
         self.sqlite_exporter = SQLiteExporter(self.output_dir)
         self.chart_exporter = ChartExporter(self.output_dir)
@@ -36,6 +37,7 @@ class Pipeline:
         self.categories_exporter = CategoriesExporter(self.output_dir)
         self.tickers_exporter = TickersExporter(self.output_dir)
         self.global_exporter = GlobalExporter(self.output_dir)
+        self.market_context_exporter = MarketContextExporter(self.output_dir)
     
     def run(self, coins: List[str], horizon: str) -> None:
         """Run the complete pipeline for given coins and horizon."""
@@ -103,6 +105,10 @@ class Pipeline:
         
         # Collect and export additional market data
         self._collect_and_export_market_data(coins, horizon)
+        
+        # Export aggregated market context
+        self.market_context_exporter.export_aggregated_market_context(coins)
+        self.logger.info("Market context aggregation completed")
     
     def _export_results(self, results: Dict[str, Dict[str, Any]], horizon: str) -> None:
         """Export results in configured formats."""
