@@ -10,6 +10,7 @@ A powerful Python command-line tool that provides **complete cryptocurrency mark
 - **Market Intelligence**: Global market trends, sector rotation, dominance analysis (news not available via CoinGecko API)
 - **Liquidity Analysis**: Exchange listings, trading venues, CEX/DEX breakdown
 - **LLM-Ready Exports**: Structured JSON/CSV/SQLite + visual charts for AI consumption
+- **🆕 Combined Snapshots**: Single file containing all timeframes with automatic freshness detection
 
 Perfect for **AI-powered trading systems**, researchers, and analysts who need the **most comprehensive crypto market context** available, all automated and ready for LLM analysis.
 
@@ -201,24 +202,72 @@ market_data:
 ## 📁 Optimized Output Structure
 
 ```
-data/runs/20250819_185950/
-├── intraday/
-│   └── all_coins_1h.json          # Aggregated hourly technical data
-├── swing/
-│   └── all_coins_1d.json          # Aggregated daily technical data  
-├── market_context.json            # Unified market intelligence
-├── categories.json                # Sector rotation data
-├── global.json                    # Global market trends
-├── metadata.json                  # Project fundamentals
-├── crypto_technicals_intraday.db  # SQLite database
-└── logs/
-    └── run_20250819_185950.log
+data/
+├── runs/20250819_185950/          # Timestamped run data
+│   ├── intraday/
+│   │   └── all_coins_1h.json      # Aggregated hourly technical data
+│   ├── swing/
+│   │   └── all_coins_1d.json      # Aggregated daily technical data  
+│   ├── market_context.json        # Unified market intelligence
+│   ├── categories.json            # Sector rotation data
+│   ├── global.json                # Global market trends
+│   ├── metadata.json              # Project fundamentals
+│   ├── crypto_technicals_intraday.db  # SQLite database
+│   └── logs/
+│       └── run_20250819_185950.log
+└── snapshots/                     # 🆕 LLM-Optimized Snapshots
+    ├── latest_snapshot.json       # Combined multi-horizon snapshot
+    ├── snapshot_intraday_2025-08-19T22-25-21Z.json
+    └── snapshot_swing_2025-08-19T22-24-53Z.json
 ```
+
+### 🆕 Combined Snapshot System
+
+The **combined snapshot** (`data/snapshots/latest_snapshot.json`) is designed for LLM analysis:
+
+```json
+{
+  "meta": {
+    "last_updated": "2025-08-19T22:25:21Z",
+    "horizons_present": ["intraday", "swing"],
+    "coins_tracked": ["ethereum", "bitcoin", "solana", ...]
+  },
+  "intraday": {
+    "meta": { "granularity": "1h", "run_timestamp": "..." },
+    "coins": { 
+      "ethereum": { 
+        "price": 4150.53, 
+        "rsi_14": 35.5, "rsi_state": "neutral",
+        "macd_hist": -7.3, "macd_state": "neutral",
+        "pct_change": { "1h": -0.2, "24h": -4.5, "7d": -9.4 }
+      }
+    }
+  },
+  "swing": {
+    "meta": { "granularity": "1d", "run_timestamp": "..." },
+    "coins": { 
+      "ethereum": { 
+        "price": 4317.28,
+        "rsi_14": 60.1, "rsi_state": "neutral", 
+        "macd_hist": 0.57, "macd_state": "neutral"
+      }
+    }
+  }
+}
+```
+
+**Key Features**:
+- **Single file**: All timeframes in one place, no confusion
+- **Data preservation**: Running intraday doesn't overwrite swing data
+- **Smart freshness**: Only updates when crossing meaningful time boundaries
+- **LLM-ready**: Categorical signals (overbought/oversold) + raw values
+- **Compact**: ~20KB for 6 coins, 2 horizons vs 100s of KB in raw exports
 
 **Key Improvements**:
 - **70% fewer files**: Aggregated format reduces clutter
 - **Enhanced cross-coin analysis**: Performance ranking and comparative metrics
 - **Unified market intelligence**: Single `market_context.json` combines all market data
+- **🆕 LLM-optimized snapshots**: Combined multi-horizon file for AI analysis
 - **Optional individual files**: Set `individual_coin_files: true` to restore individual coin files
 
 ## 🧪 Testing

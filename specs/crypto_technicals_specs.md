@@ -10,6 +10,7 @@ Build a lightweight Python command‑line tool that **pulls historical price/vol
 ### Expected Outcomes
 - Produce up‑to‑date indicator snapshots for every selected coin and timeframe.
 - Export compressed JSON (and optional CSV / SQLite) plus PNG charts per run.
+- **Generate LLM-optimized combined snapshot** containing all horizons in a single file for easy analysis.
 - Finish a 20‑coin, 90‑day 1‑h + multi‑year daily run in < 2 min on a MacBook Pro.
 - Require **no** manual screenshots or GUI interaction.
 

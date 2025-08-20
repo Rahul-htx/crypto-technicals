@@ -38,12 +38,24 @@ from .utils.logging_utils import setup_logger
     is_flag=True,
     help='Enable verbose logging'
 )
+@click.option(
+    '--force-hourly',
+    is_flag=True,
+    help='Force include history arrays in snapshot regardless of timing'
+)
+@click.option(
+    '--force-daily',
+    is_flag=True,
+    help='Force include long-horizon stats in snapshot regardless of timing'
+)
 def main(
     coins: Optional[str],
     horizons: Optional[str],
     config: str,
     output_dir: Optional[str],
-    verbose: bool
+    verbose: bool,
+    force_hourly: bool,
+    force_daily: bool
 ):
     """
     CryptoTechnicals - Technical Analysis Data Engine
@@ -93,7 +105,7 @@ def main(
                 continue
                 
             logger.info(f"Processing horizon: {horizon}")
-            pipeline.run(coin_list, horizon)
+            pipeline.run(coin_list, horizon, force_hourly, force_daily)
         
         logger.info("Pipeline completed successfully")
         print(f"Results saved to: {run_output_dir}")

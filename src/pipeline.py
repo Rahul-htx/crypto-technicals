@@ -16,6 +16,7 @@ from .exporter.categories_exporter import CategoriesExporter
 from .exporter.tickers_exporter import TickersExporter
 from .exporter.global_exporter import GlobalExporter
 from .exporter.market_context_exporter import MarketContextExporter
+from .exporter.snapshot_exporter import SnapshotExporter
 from .config_loader import Config
 
 class Pipeline:
@@ -38,8 +39,9 @@ class Pipeline:
         self.tickers_exporter = TickersExporter(self.output_dir)
         self.global_exporter = GlobalExporter(self.output_dir)
         self.market_context_exporter = MarketContextExporter(self.output_dir)
+        self.snapshot_exporter = SnapshotExporter(self.output_dir, logger)
     
-    def run(self, coins: List[str], horizon: str) -> None:
+    def run(self, coins: List[str], horizon: str, force_hourly: bool = False, force_daily: bool = False) -> None:
         """Run the complete pipeline for given coins and horizon."""
         horizon_config = self.config.get_horizon_config(horizon)
         
@@ -109,6 +111,11 @@ class Pipeline:
         # Export aggregated market context
         self.market_context_exporter.export_aggregated_market_context(coins)
         self.logger.info("Market context aggregation completed")
+        
+        # Export LLM-optimized snapshot (always run this last)
+        if results:
+            self.snapshot_exporter.export(results, horizon, force_hourly, force_daily)
+            self.logger.info("Snapshot export completed")
     
     def _export_results(self, results: Dict[str, Dict[str, Any]], horizon: str) -> None:
         """Export results in configured formats."""
