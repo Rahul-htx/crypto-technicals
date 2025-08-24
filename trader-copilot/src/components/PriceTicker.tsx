@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSystemStore } from '@/lib/system-context';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,12 +14,60 @@ export function PriceTicker() {
   const [showViewer, setShowViewer] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<string>('');
   const [clientFormattedTime, setClientFormattedTime] = useState('');
+  const [lastStatusHash, setLastStatusHash] = useState<string>('');
+  const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(false); // Default to false
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
   
+  const loadSnapshot = useCallback(async () => {
+    try {
+      const response = await fetch('/api/snapshot', {
+        headers: getAuthHeaders()
+      });
+
+      if (response.ok) {
+        const snapshot = await response.json();
+        const intradayTimestamp = snapshot.intraday?.meta?.run_timestamp;
+        const swingTimestamp = snapshot.swing?.meta?.run_timestamp;
+        const timestamp = intradayTimestamp || swingTimestamp;
+        
+        const hash = timestamp ? 
+          new Date(timestamp).toLocaleString('en-US', { 
+            timeZone: 'America/Chicago',
+            hour: 'numeric', 
+            minute: '2-digit',
+            hour12: false 
+          }).replace(':', '') : 
+          'unknown';
+          
+        setSnapshot(snapshot, hash);
+      }
+    } catch (error) {
+      console.error('Failed to load snapshot:', error);
+    }
+  }, [setSnapshot]);
 
   useEffect(() => {
-    // Load initial snapshot
+    // Fetch initial polling status from backend
+    const fetchPollingStatus = async () => {
+      try {
+        const response = await fetch('/api/control', { headers: getAuthHeaders() });
+        if (response.ok) {
+          const data = await response.json();
+          setAutoRefreshEnabled(data.enabled);
+        } else {
+          // If the endpoint fails, default to manual for safety
+          setAutoRefreshEnabled(false);
+        }
+      } catch (error) {
+        console.error('Failed to fetch polling status:', error);
+        setAutoRefreshEnabled(false);
+      }
+    };
+
+    // Load initial data on mount
     loadSnapshot();
-  }, []);
+    fetchPollingStatus();
+  }, [loadSnapshot]); // This dependency is correct because loadSnapshot is wrapped in useCallback
 
   useEffect(() => {
     // Update last updated time when snapshot changes
@@ -47,34 +95,55 @@ export function PriceTicker() {
     }
   }, [lastUpdated]);
 
-  const loadSnapshot = async () => {
+  // Auto-refresh polling logic
+  const checkForUpdates = useCallback(async () => {
+    if (!autoRefreshEnabled) return;
+    
     try {
-      const response = await fetch('/api/snapshot', {
+      const response = await fetch('/api/status', {
         headers: getAuthHeaders()
       });
-
+      
       if (response.ok) {
-        const snapshot = await response.json();
-        // Create a simple hash from the timestamp (Central time)
-        const intradayTimestamp = snapshot.intraday?.meta?.run_timestamp;
-        const swingTimestamp = snapshot.swing?.meta?.run_timestamp;
-        const timestamp = intradayTimestamp || swingTimestamp;
+        const signal = await response.json();
+        const currentHash = signal.hash;
         
-        const hash = timestamp ? 
-          new Date(timestamp).toLocaleString('en-US', { 
-            timeZone: 'America/Chicago',
-            hour: 'numeric', 
-            minute: '2-digit',
-            hour12: false 
-          }).replace(':', '') : 
-          'unknown';
-          
-        setSnapshot(snapshot, hash);
+        // If we have a new hash and it's different from our last known hash
+        if (currentHash && currentHash !== lastStatusHash) {
+          console.log('🔄 Auto-refresh: New data detected, updating snapshot...');
+          setLastStatusHash(currentHash);
+          await loadSnapshot();
+        }
       }
     } catch (error) {
-      console.error('Failed to load snapshot:', error);
+      console.error('Auto-refresh status check failed:', error);
     }
-  };
+  }, [autoRefreshEnabled, lastStatusHash, loadSnapshot]);
+
+  // Set up auto-refresh polling
+  useEffect(() => {
+    if (autoRefreshEnabled) {
+      // Check immediately on enable
+      checkForUpdates();
+      
+      // Then check every 10 seconds
+      intervalRef.current = setInterval(checkForUpdates, 10000);
+    } else {
+      // Clear interval when disabled
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    }
+
+    // Cleanup on unmount
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  }, [autoRefreshEnabled, checkForUpdates]);
 
   const refreshSnapshot = async () => {
     setIsRefreshing(true);
@@ -91,6 +160,23 @@ export function PriceTicker() {
       console.error('Failed to refresh snapshot:', error);
     } finally {
       setIsRefreshing(false);
+    }
+  };
+
+  const togglePolling = async () => {
+    const newStatus = !autoRefreshEnabled;
+    try {
+      const response = await fetch('/api/control', {
+        method: 'POST',
+        headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enabled: newStatus }),
+      });
+      if (response.ok) {
+        setAutoRefreshEnabled(newStatus);
+        console.log(`Backend polling ${newStatus ? 'enabled' : 'disabled'}`);
+      }
+    } catch (error) {
+      console.error('Failed to toggle polling:', error);
     }
   };
 
@@ -128,6 +214,14 @@ export function PriceTicker() {
             <Badge variant="outline" className="text-xs">
               {lastSnapshotHash}
             </Badge>
+            <Button
+              variant={autoRefreshEnabled ? "default" : "outline"}
+              size="sm"
+              onClick={togglePolling}
+              className="text-xs px-2"
+            >
+              {autoRefreshEnabled ? '🟢 Auto' : '⭕ Manual'}
+            </Button>
             <Button
               variant="ghost"
               size="sm"
