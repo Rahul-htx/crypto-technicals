@@ -98,7 +98,7 @@ export function PriceTicker() {
     const snapshot = systemCtx.snapshot;
     if (!snapshot) return [];
 
-    const prices: Array<{ coin: string; price: number; change24h: number }> = [];
+    const prices: Array<{ coin: string; price: number; changeToday: number }> = [];
     
     // Get prices from intraday first, then swing
     const horizonData = snapshot.intraday?.coins || snapshot.swing?.coins;
@@ -108,7 +108,7 @@ export function PriceTicker() {
           prices.push({
             coin: coin.toUpperCase(),
             price: data.price,
-            change24h: data.pct_change?.['24h'] || 0
+            changeToday: data.pct_change?.['24h'] || 0  // Using 24h as proxy for "today"
           });
         }
       });
@@ -148,8 +148,8 @@ export function PriceTicker() {
                   <div className="font-mono">
                     ${price.price.toLocaleString(undefined, { maximumFractionDigits: 2 })}
                   </div>
-                  <div className={`text-xs ${price.change24h >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {price.change24h >= 0 ? '+' : ''}{price.change24h.toFixed(2)}%
+                  <div className={`text-xs ${price.changeToday >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {price.changeToday >= 0 ? '+' : ''}{price.changeToday.toFixed(2)}% 24h
                   </div>
                 </div>
               </div>

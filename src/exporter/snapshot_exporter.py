@@ -365,6 +365,48 @@ class SnapshotExporter:
                 "price_timestamp": market_data.get('last_updated') if market_data else None
             }
             
+            # Add percentage changes - try markets data first, fallback to calculation
+            pct_changes = {}
+            
+            # Try to get from CoinGecko markets data
+            if market_data:
+                if 'price_change_percentage_1h_in_currency' in market_data:
+                    pct_changes['1h'] = market_data['price_change_percentage_1h_in_currency']
+                if 'price_change_percentage_24h_in_currency' in market_data:
+                    pct_changes['24h'] = market_data['price_change_percentage_24h_in_currency']
+                if 'price_change_percentage_7d_in_currency' in market_data:
+                    pct_changes['7d'] = market_data['price_change_percentage_7d_in_currency']
+            
+            # Calculate from OHLCV data if markets data is missing
+            if not pct_changes and len(df) >= 2:
+                current_price = latest_price
+                
+                # 1h change (from previous hour)
+                if len(df) >= 2:
+                    prev_price = float(df['close'].iloc[-2])
+                    if prev_price > 0:
+                        pct_changes['1h'] = ((current_price - prev_price) / prev_price) * 100
+                
+                # 24h change (from 24 hours ago, assuming hourly data)
+                if len(df) >= 24:
+                    day_ago_price = float(df['close'].iloc[-24])
+                    if day_ago_price > 0:
+                        pct_changes['24h'] = ((current_price - day_ago_price) / day_ago_price) * 100
+                elif len(df) >= 2:
+                    # Fallback to beginning of data
+                    start_price = float(df['close'].iloc[0])
+                    if start_price > 0:
+                        pct_changes['24h'] = ((current_price - start_price) / start_price) * 100
+                
+                # 7d change (from 7*24=168 hours ago)
+                if len(df) >= 168:
+                    week_ago_price = float(df['close'].iloc[-168])
+                    if week_ago_price > 0:
+                        pct_changes['7d'] = ((current_price - week_ago_price) / week_ago_price) * 100
+            
+            if pct_changes:
+                coin_data['pct_change'] = pct_changes
+            
             # Add market & supply metrics from CoinGecko markets API
             if market_data:
                 self._add_market_metrics(coin_data, market_data)
