@@ -1,7 +1,6 @@
 'use client';
 
-import { useChat } from '@ai-sdk/react';
-import { useState } from 'react';
+import { useState, useId } from 'react';
 import { useSystemStore } from '@/lib/system-context';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,18 +10,18 @@ import { Separator } from '@/components/ui/separator';
 import { Send, Bot, User } from 'lucide-react';
 import { getAuthHeaders } from '@/lib/auth';
 
+interface Message {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+}
+
 export function Chat() {
   const { modelId } = useSystemStore();
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  
-  const { messages, sendMessage } = useChat({
-    api: '/api/chat',
-    headers: getAuthHeaders(),
-    body: {
-      model: modelId,
-    },
-  });
+  const [messages, setMessages] = useState<Message[]>([]);
+  const idBase = useId();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setInput(e.target.value);
@@ -32,14 +31,74 @@ export function Chat() {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
     
-    const message = input.trim();
+    const messageContent = input.trim();
+    const userMessage: Message = {
+      id: idBase + '-user-' + Date.now(),
+      role: 'user',
+      content: messageContent
+    };
+    
     setInput(''); // Clear input immediately
+    setMessages(prev => [...prev, userMessage]);
     setIsLoading(true);
     
     try {
-      await sendMessage(message);
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({
+          messages: [...messages, userMessage],
+          model: modelId
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const reader = response.body?.getReader();
+      if (!reader) {
+        throw new Error('No response body reader');
+      }
+
+      // Add assistant message placeholder
+      const assistantMessage: Message = {
+        id: idBase + '-assistant-' + Date.now(),
+        role: 'assistant',
+        content: ''
+      };
+      setMessages(prev => [...prev, assistantMessage]);
+
+      // Stream the response
+      const decoder = new TextDecoder();
+      let content = '';
+      
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        
+        const chunk = decoder.decode(value);
+        content += chunk;
+        
+        // Update the assistant message with accumulated content
+        setMessages(prev => 
+          prev.map(msg => 
+            msg.id === assistantMessage.id 
+              ? { ...msg, content } 
+              : msg
+          )
+        );
+      }
+      
     } catch (error) {
       console.error('Failed to send message:', error);
+      // Add error message
+      const errorMessage: Message = {
+        id: idBase + '-error-' + Date.now(),
+        role: 'assistant',
+        content: `Error: ${error instanceof Error ? error.message : 'Unknown error'}`
+      };
+      setMessages(prev => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
     }
@@ -90,24 +149,6 @@ export function Chat() {
                 <div className="text-sm whitespace-pre-wrap">
                   {message.content}
                 </div>
-                
-                {/* Show tool calls */}
-                {message.toolInvocations && message.toolInvocations.length > 0 && (
-                  <div className="mt-2 pt-2 border-t border-muted-foreground/20">
-                    {message.toolInvocations.map((toolInvocation, index) => (
-                      <div key={index} className="text-xs text-muted-foreground">
-                        🔧 {toolInvocation.toolName}
-                        {toolInvocation.args && Object.keys(toolInvocation.args).length > 0 && (
-                          <span className="ml-2">
-                            ({Object.entries(toolInvocation.args)
-                              .map(([key, value]) => `${key}: ${value}`)
-                              .join(', ')})
-                          </span>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
               </div>
               
               {message.role === 'user' && (

@@ -117,16 +117,19 @@ Trader Copilot seamlessly integrates with the CryptoTechnicals engine:
 - Manual refresh capability
 - Thesis management system
 - **v0.3.2**: Fixed timestamp display and chat functionality
+- **v0.3.3**: Fixed AI SDK tools integration - full function calling now works
 
-### ⚠️ Known Issues
-- **Tool Schema Format**: OpenAI function calling currently disabled due to schema validation errors
-- **Workaround**: Chat works without tools, market data accessible via API endpoints
+### ✅ Fully Functional
+- **AI Function Calling**: Tools now work with o3, o3-deep-research, o4-mini, and gpt-5
+- **Market Data Access**: AI can fetch live crypto data via `getSnapshot` tool
+- **Thesis Management**: AI can update investment strategy via `updateThesis` tool
+- **Real-time Analysis**: Complete integration between chat interface and market data
 
 ### 🔮 Next Priorities
-1. Resolve OpenAI tool schema formatting issues
-2. Enable complete AI tool integration
-3. Advanced trading tools (position sizing, risk management)
-4. Chart integration for visual analysis
+1. Advanced trading tools (position sizing, risk management)
+2. Chart integration for visual analysis
+3. Portfolio tracking and performance analytics
+4. Multi-timeframe analysis tools
 
 ## 📁 Project Structure
 
@@ -175,4 +178,4 @@ src/
 
 **Built with**: Next.js 14, TypeScript, Tailwind CSS, OpenAI API, shadcn/ui  
 **Integration**: CryptoTechnicals Python CLI backend  
-**Version**: 0.3.2 - Dual-Channel Memory Trading Assistant
+**Version**: 0.3.3 - Fully Functional AI Trading Assistant

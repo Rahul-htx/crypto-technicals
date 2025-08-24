@@ -61,19 +61,17 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const { messages, model = 'gpt-4o-mini' } = await request.json();
+    const { messages, model = 'o3' } = await request.json();
 
     const systemPrompt = await buildSystemPrompt();
-
-    // Debug: Log the tools object structure
-    console.log('Tools object being passed to streamText:', JSON.stringify(tools, null, 2));
     
+    // Organization is now verified, use proper models with tools re-enabled
     const result = await streamText({
       model: openai(model),
       messages,
       system: systemPrompt,
       tools,
-      maxSteps: 5, // Allow multiple tool calls in sequence
+      maxSteps: 5,
     });
 
     return result.toTextStreamResponse();
