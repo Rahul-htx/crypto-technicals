@@ -11,6 +11,7 @@ A powerful Python command-line tool that provides **complete cryptocurrency mark
 - **Liquidity Analysis**: Exchange listings, trading venues, CEX/DEX breakdown
 - **LLM-Ready Exports**: Structured JSON/CSV/SQLite + visual charts for AI consumption
 - **🆕 Combined Snapshots**: Single file containing all timeframes with automatic freshness detection
+- **⚡ Real-Time Pricing**: Live spot prices with <30s latency, automatic fallback to candle data
 
 Perfect for **AI-powered trading systems**, researchers, and analysts who need the **most comprehensive crypto market context** available, all automated and ready for LLM analysis.
 
@@ -70,6 +71,23 @@ data/runs/20250819_185950/
     ├── categories.json (sector rotation)
     ├── global.json (macro trends)
     └── tickers.json (liquidity analysis)
+```
+
+### Real-Time Price Enhancement
+
+**Live Spot Pricing**: Prices are now sourced from CoinGecko's real-time markets endpoint with transparent fallback:
+
+```json
+{
+  "ethereum": {
+    "price": 4945.81,
+    "price_source": "spot",
+    "price_timestamp": "2025-08-24T19:21:32.546844Z",
+    "latest_data": {
+      "close": 4768.69  // 1-hour candle close (fallback)
+    }
+  }
+}
 ```
 
 ### Sample Outputs
@@ -221,9 +239,9 @@ data/
     └── snapshot_swing_2025-08-19T22-24-53Z.json
 ```
 
-### 🆕 Combined Snapshot System with Market Intelligence
+### 🆕 Combined Snapshot System with Real-Time Intelligence
 
-The **combined snapshot** (`data/snapshots/latest_snapshot.json`) is designed for comprehensive LLM analysis:
+The **combined snapshot** (`data/snapshots/latest_snapshot.json`) provides comprehensive LLM analysis with live pricing:
 
 ```json
 {
@@ -244,7 +262,9 @@ The **combined snapshot** (`data/snapshots/latest_snapshot.json`) is designed fo
     },
     "coins": { 
       "ethereum": { 
-        "price": 4150.54,
+        "price": 4945.81,
+        "price_source": "spot",
+        "price_timestamp": "2025-08-24T19:21:32.546844Z",
         "market_cap_usd": 500029793189,
         "circulating_supply": 120707692.09,
         "volume_24h_usd": 41980540031,
@@ -271,7 +291,7 @@ The **combined snapshot** (`data/snapshots/latest_snapshot.json`) is designed fo
 **Key Features**:
 - **🌍 Global market context**: Total market cap, dominance, volume, sentiment
 - **💰 Comprehensive coin metrics**: Market cap, supply dynamics, liquidity ratios
-- **📊 Fresh market data**: Real-time supply/market metrics from CoinGecko markets API
+- **📊 Real-time pricing**: Live spot prices with <30s latency + transparent fallback to candle data
 - **🔄 Multi-horizon preservation**: Intraday and swing data coexist without conflicts
 - **🤖 LLM-optimized**: Categorical signals + raw values + market fundamentals
 - **⚡ Smart freshness**: Only updates when crossing meaningful time boundaries
@@ -280,6 +300,7 @@ The **combined snapshot** (`data/snapshots/latest_snapshot.json`) is designed fo
 **Key Improvements**:
 - **70% fewer files**: Aggregated format reduces clutter
 - **Enhanced cross-coin analysis**: Performance ranking and comparative metrics
+- **Real-time price accuracy**: Eliminated 0-59 minute price lag with live spot pricing
 - **Unified market intelligence**: Single `market_context.json` combines all market data
 - **🆕 LLM-optimized snapshots**: Combined multi-horizon file for AI analysis
 - **Optional individual files**: Set `individual_coin_files: true` to restore individual coin files

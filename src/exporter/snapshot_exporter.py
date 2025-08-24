@@ -52,7 +52,7 @@ class SnapshotExporter:
         
         # Determine freshness based on this horizon's last run
         existing_horizon_data = combined_snapshot.get(horizon, {}) if combined_snapshot else {}
-        now = datetime.now()
+        now = datetime.utcnow()
         include_history, include_long_stats = self._determine_freshness_for_horizon(
             existing_horizon_data, now, granularity, force_hourly, force_daily
         )
@@ -350,28 +350,19 @@ class SnapshotExporter:
             # Get market data for this coin
             market_data = markets_data.get(coin, {})
             
-            # Use market data price changes if available, otherwise calculate from OHLCV
-            pct_changes = {}
-            if market_data:
-                pct_changes['1h'] = market_data.get('price_change_percentage_1h_in_currency', 0)
-                pct_changes['24h'] = market_data.get('price_change_percentage_24h_in_currency', 0)  
-                pct_changes['7d'] = market_data.get('price_change_percentage_7d_in_currency', 0)
+            # Determine latest price: prefer real-time current_price from markets endpoint
+            spot_price = market_data.get('current_price') if market_data else None
+            if spot_price is not None:
+                latest_price = float(spot_price)
+                price_source = 'spot'
             else:
-                # Fallback to calculating from OHLCV data
-                if len(df) >= 2:
-                    pct_changes['1h'] = ((latest['close'] - df['close'].iloc[-2]) / df['close'].iloc[-2]) * 100
-                if len(df) >= 24:  # 24 hours ago (assuming hourly data)
-                    pct_changes['24h'] = ((latest['close'] - df['close'].iloc[-24]) / df['close'].iloc[-24]) * 100
-                elif len(df) >= 2:
-                    pct_changes['24h'] = ((latest['close'] - df['close'].iloc[0]) / df['close'].iloc[0]) * 100
-                if len(df) >= 168:  # 7 days ago (assuming hourly data)
-                    pct_changes['7d'] = ((latest['close'] - df['close'].iloc[-168]) / df['close'].iloc[-168]) * 100
-                elif len(df) >= 2:
-                    pct_changes['7d'] = ((latest['close'] - df['close'].iloc[0]) / df['close'].iloc[0]) * 100
+                latest_price = float(latest['close'])
+                price_source = 'candle_close'
             
             coin_data = {
-                "price": float(latest['close']),
-                "pct_change": pct_changes
+                "price": latest_price,
+                "price_source": price_source,
+                "price_timestamp": market_data.get('last_updated') if market_data else None
             }
             
             # Add market & supply metrics from CoinGecko markets API
