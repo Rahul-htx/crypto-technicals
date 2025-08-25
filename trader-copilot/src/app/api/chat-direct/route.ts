@@ -21,8 +21,9 @@ const MODEL_MAP: Record<string, string> = {
 // Deep research models that require the Responses API
 const DEEP_RESEARCH_MODELS = ['o3-deep-research', 'o4-mini-deep-research'];
 
-// Models that support web search (require Responses API for web search functionality)
-const WEB_SEARCH_MODELS = ['o3', 'o3-pro', 'o4-mini', 'gpt-5'];
+// Models that support web search (but only when needed)
+const WEB_SEARCH_CAPABLE_MODELS = ['o3', 'o3-pro', 'o4-mini', 'gpt-5'];
+
 
 export async function POST(request: NextRequest) {
   if (!verifyAuth(request)) {
@@ -30,7 +31,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const { messages, model = 'gpt-4o-mini' } = await request.json();
+    const { messages, model = 'gpt-4o-mini', enableWebSearch = false } = await request.json();
     
     const systemPrompt = await buildSystemPrompt();
     const actualModel = MODEL_MAP[model] || model;
@@ -42,8 +43,8 @@ export async function POST(request: NextRequest) {
       return handleDeepResearch(messages, actualModel, systemPrompt);
     }
     
-    // Check if this model supports web search (requires Responses API)
-    if (WEB_SEARCH_MODELS.includes(actualModel)) {
+    // Check if web search is enabled for web-search capable models
+    if (WEB_SEARCH_CAPABLE_MODELS.includes(actualModel) && enableWebSearch) {
       return handleWebSearchModel(messages, actualModel, systemPrompt);
     }
     

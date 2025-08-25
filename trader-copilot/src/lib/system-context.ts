@@ -13,10 +13,12 @@ export interface SystemState {
   systemCtx: SystemContext;
   lastSnapshotHash: string;
   isLoading: boolean;
+  enableWebSearch: boolean;
   setModelId: (modelId: string) => void;
   setSnapshot: (snapshot: Snapshot | null, hash: string) => void;
   setThesis: (thesis: string, updatedBy: string) => void;
   setLoading: (loading: boolean) => void;
+  setEnableWebSearch: (enabled: boolean) => void;
 }
 
 const MODELS = {
@@ -36,6 +38,7 @@ export const useSystemStore = create<SystemState>((set, get) => ({
   },
   lastSnapshotHash: '',
   isLoading: false,
+  enableWebSearch: false, // Default to NO web search
 
   setModelId: (modelId: string) => {
     set({ modelId });
@@ -65,14 +68,27 @@ export const useSystemStore = create<SystemState>((set, get) => ({
 
   setLoading: (isLoading: boolean) => {
     set({ isLoading });
+  },
+
+  setEnableWebSearch: (enableWebSearch: boolean) => {
+    set({ enableWebSearch });
+    // Persist to localStorage
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('trader-copilot-websearch', enableWebSearch.toString());
+    }
   }
 }));
 
-// Initialize model from localStorage on client side
+// Initialize model and web search preference from localStorage on client side
 if (typeof window !== 'undefined') {
   const savedModel = localStorage.getItem('trader-copilot-model');
   if (savedModel && savedModel in MODELS) {
     useSystemStore.getState().setModelId(savedModel);
+  }
+  
+  const savedWebSearch = localStorage.getItem('trader-copilot-websearch');
+  if (savedWebSearch) {
+    useSystemStore.getState().setEnableWebSearch(savedWebSearch === 'true');
   }
 }
 

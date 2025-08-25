@@ -88,7 +88,7 @@ function formatContent(content: string) {
 }
 
 export function ChatDirect() {
-  const { modelId } = useSystemStore();
+  const { modelId, enableWebSearch } = useSystemStore();
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -137,7 +137,8 @@ export function ChatDirect() {
         },
         body: JSON.stringify({
           messages: [...messages, userMessage],
-          model: modelId
+          model: modelId,
+          enableWebSearch: enableWebSearch
         })
       });
 
