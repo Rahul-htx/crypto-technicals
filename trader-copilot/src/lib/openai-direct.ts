@@ -133,6 +133,11 @@ export async function executeToolCall(name: string, args: any): Promise<any> {
       }
     }
     
+    case 'web_search_preview':
+      // OpenAI handles this tool natively, we shouldn't receive it in executeToolCall
+      // but handle it gracefully just in case
+      return { note: 'Web search handled by OpenAI' };
+    
     default:
       return { error: `Unknown tool: ${name}` };
   }

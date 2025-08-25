@@ -21,6 +21,9 @@ const MODEL_MAP: Record<string, string> = {
 // Deep research models that require the Responses API
 const DEEP_RESEARCH_MODELS = ['o3-deep-research', 'o4-mini-deep-research'];
 
+// Models that support web search (require Responses API for web search functionality)
+const WEB_SEARCH_MODELS = ['o3', 'o3-pro', 'o4-mini', 'gpt-5'];
+
 export async function POST(request: NextRequest) {
   if (!verifyAuth(request)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -37,6 +40,11 @@ export async function POST(request: NextRequest) {
     // Check if this is a deep research model
     if (DEEP_RESEARCH_MODELS.includes(actualModel)) {
       return handleDeepResearch(messages, actualModel, systemPrompt);
+    }
+    
+    // Check if this model supports web search (requires Responses API)
+    if (WEB_SEARCH_MODELS.includes(actualModel)) {
+      return handleWebSearchModel(messages, actualModel, systemPrompt);
     }
     
     // Build the messages array with system prompt for regular models
@@ -334,6 +342,244 @@ Please analyze the latest user message and provide a comprehensive response usin
     console.error('Deep research handler error:', error);
     return NextResponse.json(
       { error: 'Deep research initialization failed' },
+      { status: 500 }
+    );
+  }
+}
+
+async function handleWebSearchModel(
+  messages: any[],
+  model: string,
+  systemPrompt: string
+) {
+  try {
+    // Convert messages to input string for Responses API
+    const conversationHistory = messages
+      .map(msg => {
+        if (msg.role === 'user') return `User: ${msg.content}`;
+        if (msg.role === 'assistant') return `Assistant: ${msg.content}`;
+        return '';
+      })
+      .filter(Boolean)
+      .join('\n\n');
+
+    const input = `${systemPrompt}
+
+Current conversation:
+${conversationHistory}
+
+Please analyze the latest user message and provide a comprehensive response. Use web search when current information is needed.`;
+
+    console.log(`🔍 Web search model starting: ${model}`);
+
+    // Create streaming response
+    const encoder = new TextEncoder();
+    const stream = new ReadableStream({
+      async start(controller) {
+        try {
+          // Send initial progress
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify({
+            type: 'progress',
+            stage: 'initializing',
+            message: 'Preparing analysis...'
+          })}\n\n`));
+
+          // Call the Responses API with web search support
+          const response = await fetch('https://api.openai.com/v1/responses', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${OPENAI_API_KEY}`,
+            },
+            body: JSON.stringify({
+              model,
+              input,
+              tools: [
+                { type: "web_search_preview" }
+              ],
+              stream: true,
+            }),
+          });
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Web Search API error:', response.status, errorText);
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({
+              type: 'error',
+              error: `API Error ${response.status}: ${errorText}`
+            })}\n\n`));
+            controller.close();
+            return;
+          }
+
+          // Stream the response
+          const reader = response.body?.getReader();
+          if (!reader) {
+            throw new Error('No response body from web search API');
+          }
+
+          const decoder = new TextDecoder();
+          let buffer = '';
+          let currentSection = '';
+          
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify({
+            type: 'progress',
+            stage: 'analyzing',
+            message: 'Analyzing your request...'
+          })}\n\n`));
+
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            buffer = lines.pop() || '';
+
+            for (const line of lines) {
+              if (line.startsWith('data: ')) {
+                const data = line.slice(6);
+                if (data === '[DONE]') continue;
+
+                try {
+                  const event = JSON.parse(data);
+                  
+                  // Handle different event types from Responses API
+                  if (event.type === 'response.created') {
+                    controller.enqueue(encoder.encode(`data: ${JSON.stringify({
+                      type: 'progress',
+                      stage: 'created',
+                      message: 'Session created'
+                    })}\n\n`));
+                  }
+                  
+                  else if (event.type === 'response.in_progress') {
+                    controller.enqueue(encoder.encode(`data: ${JSON.stringify({
+                      type: 'progress',
+                      stage: 'in_progress',
+                      message: 'Processing request...'
+                    })}\n\n`));
+                  }
+
+                  // Web search events
+                  else if (event.type === 'response.web_search_call.in_progress') {
+                    controller.enqueue(encoder.encode(`data: ${JSON.stringify({
+                      type: 'progress',
+                      stage: 'web_search',
+                      message: 'Searching the web...'
+                    })}\n\n`));
+                  }
+
+                  else if (event.type === 'response.web_search_call.searching') {
+                    controller.enqueue(encoder.encode(`data: ${JSON.stringify({
+                      type: 'progress',
+                      stage: 'web_searching',
+                      message: 'Finding relevant information...'
+                    })}\n\n`));
+                  }
+
+                  else if (event.type === 'response.web_search_call.completed') {
+                    controller.enqueue(encoder.encode(`data: ${JSON.stringify({
+                      type: 'progress',
+                      stage: 'web_search_completed',
+                      message: 'Web search completed'
+                    })}\n\n`));
+                  }
+                  
+                  else if (event.type === 'response.output_text.delta') {
+                    const content = event.delta || '';
+                    controller.enqueue(encoder.encode(`data: ${JSON.stringify({
+                      type: 'content',
+                      content: content,
+                      section: currentSection
+                    })}\n\n`));
+                  }
+
+                  // Handle message content (alternative content format)
+                  else if (event.type === 'response.content_block.delta' && event.delta?.text) {
+                    const content = event.delta.text;
+                    controller.enqueue(encoder.encode(`data: ${JSON.stringify({
+                      type: 'content',
+                      content: content,
+                      section: currentSection
+                    })}\n\n`));
+                  }
+
+                  // Handle any output with text content
+                  else if (event.output && Array.isArray(event.output)) {
+                    for (const outputItem of event.output) {
+                      if (outputItem.type === 'message' && outputItem.content) {
+                        for (const contentItem of outputItem.content) {
+                          if (contentItem.type === 'output_text' && contentItem.text) {
+                            controller.enqueue(encoder.encode(`data: ${JSON.stringify({
+                              type: 'content',
+                              content: contentItem.text,
+                              section: 'Response'
+                            })}\n\n`));
+                          }
+                        }
+                      }
+                    }
+                  }
+                  
+                  else if (event.type === 'response.completed') {
+                    controller.enqueue(encoder.encode(`data: ${JSON.stringify({
+                      type: 'progress',
+                      stage: 'completed',
+                      message: 'Analysis completed'
+                    })}\n\n`));
+
+                    // Try to extract final content if available
+                    if (event.output_text) {
+                      controller.enqueue(encoder.encode(`data: ${JSON.stringify({
+                        type: 'content',
+                        content: event.output_text,
+                        section: 'Final Response'
+                      })}\n\n`));
+                    }
+                    
+                    // Send final done signal
+                    controller.enqueue(encoder.encode(`data: ${JSON.stringify({
+                      type: 'done'
+                    })}\n\n`));
+                    
+                    controller.close();
+                    return;
+                  }
+                  
+                  // Log events for debugging
+                  console.log('🔍 Web search event:', event.type);
+                  
+                } catch (e) {
+                  console.error('Error parsing web search event:', e);
+                }
+              }
+            }
+          }
+
+        } catch (error) {
+          console.error('Web search stream error:', error);
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify({
+            type: 'error',
+            error: error.message || 'Web search failed'
+          })}\n\n`));
+          controller.close();
+        }
+      }
+    });
+
+    return new Response(stream, {
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+      },
+    });
+
+  } catch (error) {
+    console.error('Web search handler error:', error);
+    return NextResponse.json(
+      { error: 'Web search initialization failed' },
       { status: 500 }
     );
   }
