@@ -6,6 +6,7 @@
 
 - **🧠 Dual-Channel Memory Architecture**: Lightweight chat history + heavy market data via tools
 - **🤖 Direct OpenAI API Integration**: Native support for o3, gpt-5, and latest models
+- **🔬 Deep Research Models**: o3-deep-research, o4-mini-deep-research with real-time progress streaming
 - **💬 AI Trading Assistant**: Conversational market analysis with real-time tool calling
 - **📊 Real-time Market Data**: Live snapshots with intelligent data sectioning
 - **📝 Persistent Investment Thesis**: Strategy tracking across sessions
@@ -13,6 +14,7 @@
 - **🎯 Intelligent Data Retrieval**: market/coin/full data access patterns
 - **🔐 Basic Authentication**: Secure single-user operation
 - **⚡ Streaming Responses**: Real-time AI responses with tool execution visibility
+- **📖 Rich Content Formatting**: Markdown rendering with clickable links and proper spacing
 
 ## 🚀 Quick Start
 
@@ -72,10 +74,12 @@ Manual Refresh ─────────────────────�
 
 | Endpoint | Method | Purpose |
 |----------|--------|---------|
-| `/api/chat` | POST | Streaming AI chat with tool calling |
+| `/api/chat-direct` | POST | Direct OpenAI API streaming with tool calling |
 | `/api/snapshot` | GET | Market data access (dual-channel) |
 | `/api/thesis` | GET/POST | Investment strategy management |
 | `/api/refresh` | POST | Manual market data refresh |
+| `/api/control` | GET/POST | Auto-polling control |
+| `/api/status` | GET | Data freshness detection |
 
 ## 🔧 Configuration
 
@@ -89,6 +93,10 @@ Manual Refresh ─────────────────────�
 
 - **gpt-4o**: Maximum capability for complex analysis
 - **gpt-4o-mini**: Cost-optimized for routine queries
+- **o3**: Latest reasoning model for advanced analysis
+- **gpt-5**: Next-generation model with enhanced capabilities
+- **o3-deep-research**: Multi-step research with web search (3-5 min response time)
+- **o4-mini-deep-research**: Cost-optimized deep research model
 
 ## 📊 Data Pipeline Integration
 
@@ -121,13 +129,16 @@ Trader Copilot seamlessly integrates with the CryptoTechnicals engine:
 - **v0.3.2**: Fixed timestamp display and chat functionality
 - **v0.3.3**: Fixed AI SDK tools integration - partial function calling
 - **v0.4.0**: Complete direct OpenAI API implementation - 100% functional tools
+- **v0.4.1**: Deep research models with real-time progress streaming and rich content formatting
 
 ### ✅ Fully Functional (Validated)
 - **AI Function Calling**: Native tool calling with o3, gpt-5, and latest models
 - **Market Data Access**: Live crypto data via smart tool selection (market/coin/full)
 - **Thesis Management**: AI can update investment strategy via `update_thesis` tool  
 - **Real-time Analysis**: Complete dual-channel architecture with token efficiency
-- **Model Support**: o3, gpt-5 confirmed working; o3-deep-research, o4-mini-deep-research (API limitations)
+- **Deep Research Models**: o3-deep-research, o4-mini-deep-research with progress streaming
+- **Rich Content Display**: Clickable links, markdown formatting, proper spacing
+- **Progress Visibility**: Real-time workflow tracking for long-running tasks
 
 ### 🔮 Next Priorities
 1. Advanced trading tools (position sizing, risk management)
@@ -176,15 +187,24 @@ src/
 ### Data Exploration
 ```
 "Show me the latest snapshot for just Bitcoin"
-"Get full market overview with all coins"
+"Get full market overview with all coins"  
 "Refresh market data and analyze changes"
 ```
+
+### Deep Research Queries
+```
+"Research the latest developments in Layer 2 scaling solutions"
+"Analyze Peter Thiel's cryptocurrency investment strategy with sources"
+"Deep dive into DeFi protocol revenue models with market data"
+```
+
+**Note**: Deep research models (o3-deep-research, o4-mini-deep-research) provide comprehensive analysis with web search and take 3-5 minutes. Progress is shown in real-time.
 
 ---
 
 **Built with**: Next.js 14, TypeScript, Tailwind CSS, Direct OpenAI API, shadcn/ui  
 **Integration**: CryptoTechnicals Python CLI backend  
-**Version**: 0.4.0 - Production-Ready AI Trading Assistant
+**Version**: 0.4.1 - Deep Research Models with Progress Streaming
 
 ## 🔗 Related Documentation
 - [Development Logs](./devlogs/) - Detailed development progress
