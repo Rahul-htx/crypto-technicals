@@ -10,7 +10,8 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
+# Python build directories (specific paths to avoid catching JS src/lib/)
+**/lib/python*/
 lib64/
 parts/
 sdist/
@@ -98,7 +99,7 @@ dmypy.json
 # Project specific
 data/runs/
 *.log
-devlogs/
+# devlogs/ - REMOVED: We want to track development logs
 .DS_Store
 *.sqlite
 *.db
