@@ -14,6 +14,7 @@ interface Message {
   role: 'user' | 'assistant' | 'system';
   content: string;
   toolCalls?: any[];
+  timestamp?: string;
 }
 
 interface ToolCallEvent {
@@ -28,6 +29,18 @@ interface ProgressEvent {
   stage: string;
   message: string;
   section?: string;
+}
+
+// Helper function to format timestamps in CT timezone
+function formatTimestamp(date: Date): string {
+  return date.toLocaleString('en-US', {
+    timeZone: 'America/Chicago',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true
+  });
 }
 
 // Helper function to format content with clickable links and basic markdown
@@ -84,9 +97,19 @@ export function ChatDirect() {
   const [currentSection, setCurrentSection] = useState<string>('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // Auto-scroll to bottom whenever messages or streaming content changes
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, streamingContent]);
+  }, [messages, streamingContent, progressState]);
+
+  // Also ensure scroll to bottom when progress state updates
+  useEffect(() => {
+    if (progressState || streamingContent) {
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, 100); // Small delay to ensure DOM updates
+    }
+  }, [progressState, streamingContent]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -94,7 +117,8 @@ export function ChatDirect() {
 
     const userMessage: Message = {
       role: 'user',
-      content: input.trim()
+      content: input.trim(),
+      timestamp: new Date().toISOString()
     };
 
     setInput('');
@@ -159,7 +183,8 @@ export function ChatDirect() {
                 // Handle error from deep research
                 setMessages(prev => [...prev, {
                   role: 'assistant',
-                  content: `Error: ${parsed.error}`
+                  content: `Error: ${parsed.error}`,
+                  timestamp: new Date().toISOString()
                 }]);
                 setProgressState(null);
                 break;
@@ -168,7 +193,8 @@ export function ChatDirect() {
                 if (currentContent) {
                   setMessages(prev => [...prev, {
                     role: 'assistant',
-                    content: currentContent
+                    content: currentContent,
+                    timestamp: new Date().toISOString()
                   }]);
                   setStreamingContent('');
                 }
@@ -185,7 +211,8 @@ export function ChatDirect() {
       console.error('Chat error:', error);
       setMessages(prev => [...prev, {
         role: 'assistant',
-        content: 'Sorry, I encountered an error while processing your request. Please try again.'
+        content: 'Sorry, I encountered an error while processing your request. Please try again.',
+        timestamp: new Date().toISOString()
       }]);
     } finally {
       setIsLoading(false);
@@ -195,14 +222,14 @@ export function ChatDirect() {
 
   return (
     <Card className="flex flex-col h-full">
-      <div className="p-4 border-b">
+      <div className="p-4 border-b flex-shrink-0">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold">Chat (Direct API)</h2>
           <Badge variant="secondary">{modelId}</Badge>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0">
         {messages.length === 0 && !streamingContent && (
           <div className="text-center text-muted-foreground py-8">
             <Bot className="h-12 w-12 mx-auto mb-2 opacity-50" />
@@ -245,13 +272,20 @@ export function ChatDirect() {
                     : 'bg-muted'
                 }`}
               >
-                {message.role === 'user' ? (
-                  <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-                ) : (
-                  <div className="text-sm">
-                    {formatContent(message.content)}
-                  </div>
-                )}
+                <div>
+                  {message.role === 'user' ? (
+                    <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                  ) : (
+                    <div className="text-sm">
+                      {formatContent(message.content)}
+                    </div>
+                  )}
+                  {message.timestamp && (
+                    <p className="text-xs text-muted-foreground mt-2 opacity-70">
+                      {formatTimestamp(new Date(message.timestamp))} CT
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -319,7 +353,7 @@ export function ChatDirect() {
 
       <Separator />
 
-      <form onSubmit={handleSubmit} className="p-4">
+      <form onSubmit={handleSubmit} className="p-4 flex-shrink-0">
         <div className="flex gap-2">
           <Input
             value={input}

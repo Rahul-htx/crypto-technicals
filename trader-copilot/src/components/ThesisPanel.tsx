@@ -6,6 +6,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 import { getAuthHeaders } from '@/lib/auth';
 
 export function ThesisPanel() {
@@ -13,6 +14,7 @@ export function ThesisPanel() {
   const [editedThesis, setEditedThesis] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
   const [clientFormattedTime, setClientFormattedTime] = useState('');
 
   useEffect(() => {
@@ -93,14 +95,26 @@ export function ThesisPanel() {
     <Card className="p-4 mb-4">
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h3 className="font-medium text-sm">Investment Thesis</h3>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            className="flex items-center space-x-2 p-0 h-auto hover:bg-transparent"
+          >
+            <h3 className="font-medium text-sm">Investment Thesis</h3>
+            {isCollapsed ? (
+              <ChevronDown className="h-4 w-4" />
+            ) : (
+              <ChevronUp className="h-4 w-4" />
+            )}
+          </Button>
           <div className="flex items-center space-x-2">
             {systemCtx.updatedBy && (
               <Badge variant="secondary" className="text-xs">
                 {systemCtx.updatedBy}
               </Badge>
             )}
-            {!isEditing && (
+            {!isEditing && !isCollapsed && (
               <Button variant="ghost" size="sm" onClick={startEditing}>
                 Edit
               </Button>
@@ -108,41 +122,45 @@ export function ThesisPanel() {
           </div>
         </div>
 
-        {isEditing ? (
-          <div className="space-y-2">
-            <Textarea
-              value={editedThesis}
-              onChange={(e) => setEditedThesis(e.target.value)}
-              placeholder="Enter your investment thesis..."
-              className="min-h-[200px] text-sm"
-            />
-            <div className="flex space-x-2">
-              <Button size="sm" onClick={saveThesis} disabled={isSaving}>
-                {isSaving ? 'Saving...' : 'Save'}
-              </Button>
-              <Button variant="ghost" size="sm" onClick={cancelEditing}>
-                Cancel
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <div className="prose prose-sm max-w-none">
-            {systemCtx.thesis ? (
-              <pre className="whitespace-pre-wrap text-xs font-mono bg-muted p-3 rounded">
-                {systemCtx.thesis}
-              </pre>
+        {!isCollapsed && (
+          <>
+            {isEditing ? (
+              <div className="space-y-2">
+                <Textarea
+                  value={editedThesis}
+                  onChange={(e) => setEditedThesis(e.target.value)}
+                  placeholder="Enter your investment thesis..."
+                  className="min-h-[200px] text-sm"
+                />
+                <div className="flex space-x-2">
+                  <Button size="sm" onClick={saveThesis} disabled={isSaving}>
+                    {isSaving ? 'Saving...' : 'Save'}
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={cancelEditing}>
+                    Cancel
+                  </Button>
+                </div>
+              </div>
             ) : (
-              <p className="text-muted-foreground text-sm">
-                No thesis available. Click Edit to set one.
+              <div className="prose prose-sm max-w-none">
+                {systemCtx.thesis ? (
+                  <pre className="whitespace-pre-wrap text-xs font-mono bg-muted p-3 rounded">
+                    {systemCtx.thesis}
+                  </pre>
+                ) : (
+                  <p className="text-muted-foreground text-sm">
+                    No thesis available. Click Edit to set one.
+                  </p>
+                )}
+              </div>
+            )}
+
+            {clientFormattedTime && (
+              <p className="text-xs text-muted-foreground">
+                Updated: {clientFormattedTime} CT
               </p>
             )}
-          </div>
-        )}
-
-        {clientFormattedTime && (
-          <p className="text-xs text-muted-foreground">
-            Updated: {clientFormattedTime} CT
-          </p>
+          </>
         )}
       </div>
     </Card>

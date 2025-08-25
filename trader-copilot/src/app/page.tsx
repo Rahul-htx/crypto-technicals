@@ -5,11 +5,11 @@ import { ChatDirect } from '@/components/ChatDirect';
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto p-4">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-screen">
-          {/* Left Sidebar */}
-          <div className="lg:col-span-1 space-y-4 max-h-screen overflow-y-auto">
+    <div className="h-screen bg-background flex flex-col">
+      <div className="container mx-auto p-4 flex-1 flex overflow-hidden">
+        <div className="flex gap-6 h-full w-full">
+          {/* Fixed Left Sidebar */}
+          <div className="w-80 flex-shrink-0 flex flex-col space-y-4">
             <div className="mb-6">
               <h1 className="text-2xl font-bold mb-2">Trader Copilot</h1>
               <p className="text-muted-foreground text-sm">
@@ -20,13 +20,14 @@ export default function Home() {
               </p>
             </div>
             
+            {/* Reordered: Prices → Model → Thesis */}
+            <PriceTicker />
             <ModelPicker />
             <ThesisPanel />
-            <PriceTicker />
           </div>
 
-          {/* Right Chat Area */}
-          <div className="lg:col-span-3 h-full flex flex-col">
+          {/* Right Chat Area - Scrollable */}
+          <div className="flex-1 flex flex-col min-w-0">
             <ChatDirect />
           </div>
         </div>
