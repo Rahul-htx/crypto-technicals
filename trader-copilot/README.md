@@ -5,12 +5,14 @@
 ## 🌟 Key Features
 
 - **🧠 Dual-Channel Memory Architecture**: Lightweight chat history + heavy market data via tools
-- **💬 AI Trading Assistant**: Conversational market analysis with OpenAI integration
-- **📊 Real-time Market Data**: Continuous snapshots from Python CLI backend
+- **🤖 Direct OpenAI API Integration**: Native support for o3, gpt-5, and latest models
+- **💬 AI Trading Assistant**: Conversational market analysis with real-time tool calling
+- **📊 Real-time Market Data**: Live snapshots with intelligent data sectioning
 - **📝 Persistent Investment Thesis**: Strategy tracking across sessions
-- **🔄 Manual Refresh**: On-demand market data updates
-- **🎯 Intelligent Data Sectioning**: market/coin/full data retrieval options
+- **🔄 Auto/Manual Polling Control**: Configurable UI refresh modes
+- **🎯 Intelligent Data Retrieval**: market/coin/full data access patterns
 - **🔐 Basic Authentication**: Secure single-user operation
+- **⚡ Streaming Responses**: Real-time AI responses with tool execution visibility
 
 ## 🚀 Quick Start
 
@@ -110,20 +112,22 @@ Trader Copilot seamlessly integrates with the CryptoTechnicals engine:
 ### ✅ Completed Features
 - Complete Next.js 14 frontend with TypeScript
 - Dual-channel memory architecture with KV store
-- OpenAI integration with streaming responses
-- Python CLI serve mode integration
+- **Direct OpenAI API integration** (bypassing AI SDK compatibility issues)
+- Auto/manual polling control with UI toggle
 - Basic authentication system
 - File-based NextJS ↔ Python CLI coordination
-- Manual refresh capability
+- Streaming responses with real-time tool execution
 - Thesis management system
 - **v0.3.2**: Fixed timestamp display and chat functionality
-- **v0.3.3**: Fixed AI SDK tools integration - full function calling now works
+- **v0.3.3**: Fixed AI SDK tools integration - partial function calling
+- **v0.4.0**: Complete direct OpenAI API implementation - 100% functional tools
 
-### ✅ Fully Functional
-- **AI Function Calling**: Tools now work with o3, o3-deep-research, o4-mini, and gpt-5
-- **Market Data Access**: AI can fetch live crypto data via `getSnapshot` tool
-- **Thesis Management**: AI can update investment strategy via `updateThesis` tool
-- **Real-time Analysis**: Complete integration between chat interface and market data
+### ✅ Fully Functional (Validated)
+- **AI Function Calling**: Native tool calling with o3, gpt-5, and latest models
+- **Market Data Access**: Live crypto data via smart tool selection (market/coin/full)
+- **Thesis Management**: AI can update investment strategy via `update_thesis` tool  
+- **Real-time Analysis**: Complete dual-channel architecture with token efficiency
+- **Model Support**: o3, gpt-5 confirmed working; o3-deep-research, o4-mini-deep-research (API limitations)
 
 ### 🔮 Next Priorities
 1. Advanced trading tools (position sizing, risk management)
@@ -141,14 +145,16 @@ src/
 │   ├── layout.tsx     # App layout
 │   └── page.tsx       # Main trading interface
 ├── components/
-│   ├── Chat.tsx       # AI conversation interface
+│   ├── ChatDirect.tsx  # Direct OpenAI API chat interface  
+│   ├── Chat.tsx        # Legacy AI SDK interface (deprecated)
 │   ├── ThesisPanel.tsx # Strategy management
-│   ├── PriceTicker.tsx # Market overview
-│   └── ui/            # shadcn/ui components
+│   ├── PriceTicker.tsx # Market overview with polling controls
+│   └── ui/             # shadcn/ui components
 └── lib/
-    ├── kv.ts          # Dual-channel memory
-    ├── tools.ts       # AI SDK tool definitions
-    └── auth.ts        # Authentication
+    ├── kv.ts           # Dual-channel memory (KV store)
+    ├── openai-direct.ts # Direct OpenAI API tool definitions
+    ├── tools.ts        # Legacy AI SDK tools (deprecated)
+    └── auth.ts         # Authentication
 ```
 
 ## 🎯 Usage Examples
@@ -176,6 +182,11 @@ src/
 
 ---
 
-**Built with**: Next.js 14, TypeScript, Tailwind CSS, OpenAI API, shadcn/ui  
+**Built with**: Next.js 14, TypeScript, Tailwind CSS, Direct OpenAI API, shadcn/ui  
 **Integration**: CryptoTechnicals Python CLI backend  
-**Version**: 0.3.3 - Fully Functional AI Trading Assistant
+**Version**: 0.4.0 - Production-Ready AI Trading Assistant
+
+## 🔗 Related Documentation
+- [Development Logs](./devlogs/) - Detailed development progress
+- [Dual-Channel Memory Specs](../specs/UI-LLM-integration-specs.md) - Architecture documentation
+- [CryptoTechnicals CLI](../CLAUDE.md) - Backend data engine documentation

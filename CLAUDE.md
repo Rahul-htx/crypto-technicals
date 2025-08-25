@@ -2,6 +2,17 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Critical Information - MUST REMEMBER
+
+### OpenAI Models (Post-2024)
+The following models are available and MUST be used exactly as specified:
+- **o3** - Base reasoning model
+- **o3-deep-research** - Optimized for multi-source research  
+- **o4-mini-deep-research** - Faster, cheaper "mini" flavor
+- **gpt-5** - Latest GPT model
+
+**IMPORTANT**: These models do NOT support custom temperature settings. Only the default temperature (1.0) is allowed.
+
 ## Project Overview
 
 CryptoTechnicals is a comprehensive cryptocurrency market intelligence engine that combines technical analysis, fundamental data, market sentiment, and sector rotation analysis. It's designed to feed AI/LLM systems with rich context for cryptocurrency analysis and trading decisions.

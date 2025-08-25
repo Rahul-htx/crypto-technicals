@@ -1,7 +1,7 @@
 import { ModelPicker } from '@/components/ModelPicker';
 import { ThesisPanel } from '@/components/ThesisPanel';
 import { PriceTicker } from '@/components/PriceTicker';
-import { Chat } from '@/components/Chat';
+import { ChatDirect } from '@/components/ChatDirect';
 
 export default function Home() {
   return (
@@ -15,6 +15,9 @@ export default function Home() {
               <p className="text-muted-foreground text-sm">
                 AI-powered cryptocurrency trading assistant
               </p>
+              <p className="text-xs text-green-600 mt-1">
+                ✓ Direct OpenAI API (no AI SDK)
+              </p>
             </div>
             
             <ModelPicker />
@@ -24,7 +27,7 @@ export default function Home() {
 
           {/* Right Chat Area */}
           <div className="lg:col-span-3 h-full flex flex-col">
-            <Chat />
+            <ChatDirect />
           </div>
         </div>
       </div>
