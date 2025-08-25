@@ -9,6 +9,40 @@ import { Badge } from '@/components/ui/badge';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { getAuthHeaders } from '@/lib/auth';
 
+// Helper function to format markdown text for thesis display
+function formatMarkdown(text: string): string {
+  let formatted = text;
+  
+  // Handle headers
+  formatted = formatted.replace(/^# (.+)$/gm, '<h1 class="text-lg font-bold mb-3 mt-4 first:mt-0">$1</h1>');
+  formatted = formatted.replace(/^## (.+)$/gm, '<h2 class="text-base font-semibold mb-2 mt-3">$1</h2>');
+  formatted = formatted.replace(/^### (.+)$/gm, '<h3 class="text-sm font-medium mb-2 mt-2">$1</h3>');
+  
+  // Handle bold text
+  formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold">$1</strong>');
+  
+  // Handle italic text (including underscores)
+  formatted = formatted.replace(/\*(.*?)\*/g, '<em class="italic">$1</em>');
+  formatted = formatted.replace(/_(.*?)_/g, '<em class="italic text-muted-foreground">$1</em>');
+  
+  // Handle line breaks and paragraphs
+  const paragraphs = formatted.split(/\n\s*\n/);
+  const formattedParagraphs = paragraphs.map(para => {
+    const trimmed = para.trim();
+    if (!trimmed) return '';
+    
+    // Skip if already formatted as header
+    if (trimmed.startsWith('<h')) return trimmed;
+    
+    // Convert single line breaks to <br> within paragraphs
+    const withBreaks = trimmed.replace(/\n/g, '<br>');
+    
+    return `<p class="mb-2 leading-relaxed">${withBreaks}</p>`;
+  }).filter(Boolean).join('');
+  
+  return formattedParagraphs;
+}
+
 export function ThesisPanel() {
   const { systemCtx, setThesis } = useSystemStore();
   const [editedThesis, setEditedThesis] = useState('');
@@ -142,11 +176,14 @@ export function ThesisPanel() {
                 </div>
               </div>
             ) : (
-              <div className="prose prose-sm max-w-none">
+              <div className="text-sm">
                 {systemCtx.thesis ? (
-                  <pre className="whitespace-pre-wrap text-xs font-mono bg-muted p-3 rounded">
-                    {systemCtx.thesis}
-                  </pre>
+                  <div 
+                    className="bg-muted/30 p-3 rounded-lg"
+                    dangerouslySetInnerHTML={{ 
+                      __html: formatMarkdown(systemCtx.thesis) 
+                    }}
+                  />
                 ) : (
                   <p className="text-muted-foreground text-sm">
                     No thesis available. Click Edit to set one.
