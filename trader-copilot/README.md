@@ -1,6 +1,6 @@
-# Trader Copilot - AI-Powered Crypto Trading Assistant
+# CryptoCortex - AI-Powered Crypto Trading Assistant
 
-**Trader Copilot** is a sophisticated dual-channel memory trading assistant that bridges the CryptoTechnicals data engine with an AI-powered chat interface. The system combines continuous market data generation with intelligent LLM analysis, creating a real-time trading intelligence platform.
+**CryptoCortex** is a sophisticated dual-channel memory trading assistant that bridges the CryptoTechnicals data engine with an AI-powered chat interface. The system combines continuous market data generation with intelligent LLM analysis, creating a real-time trading intelligence platform.
 
 ## 🌟 Key Features
 
@@ -20,17 +20,29 @@
 
 ### Prerequisites
 
-1. **Python CLI Backend Running**: Ensure the CryptoTechnicals CLI is running in serve mode:
+1. **Python CLI Backend Setup**: Set up the CryptoTechnicals CLI backend:
    ```bash
+   # Navigate to root directory
    cd ..
-   python -m src.cli --serve --interval 60 --verbose
+   
+   # Create virtual environment
+   python3 -m venv venv
+   source venv/bin/activate
+   
+   # Install dependencies
+   pip install -r requirements.txt
+   
+   # Create .env file with API keys
+   cp .env.example .env
+   # Edit .env and add your COINGECKO_API_KEY
    ```
 
-2. **Environment Variables**: Create `.env.local` file:
+2. **Environment Variables**: Create `.env.local` file in trader-copilot directory:
    ```bash
-   OPENAI_API_KEY=your_openai_api_key
-   COPILOT_USERNAME=your_username
-   COPILOT_PASSWORD=your_password
+   BASIC_AUTH_TOKEN=dev-secret
+   PYTHON_CMD=python3
+   OPENAI_API_KEY=your_openai_api_key_here
+   COINGECKO_API_KEY=your_coingecko_api_key_here
    ```
 
 ### Installation & Setup
@@ -47,7 +59,7 @@
 
 3. **Open Browser**: Navigate to [http://localhost:3000](http://localhost:3000)
 
-4. **Login**: Use credentials from your `.env.local` file
+4. **Authentication**: The app uses basic auth with the `BASIC_AUTH_TOKEN` from `.env.local`
 
 ## 🏗️ Architecture Overview
 
@@ -57,9 +69,9 @@
 **Channel 2 (Snapshots)**: Heavy market data accessed via tool calls (cost-optimized)
 
 ```
-Python CLI (60s) → Snapshot Files → KV Cache → Next.js API → OpenAI
-                                     ↑
-Manual Refresh ───────────────────────┘
+Manual Refresh → Python CLI → Snapshot Files → KV Cache → Next.js API → OpenAI
+                     ↑                             ↑
+                Data Generation            Tool Access via Chat
 ```
 
 ### Component Structure
@@ -100,13 +112,15 @@ Manual Refresh ─────────────────────�
 
 ## 📊 Data Pipeline Integration
 
-Trader Copilot seamlessly integrates with the CryptoTechnicals engine:
+CryptoCortex integrates with the CryptoTechnicals engine:
 
-1. **Python CLI** generates snapshots every 60 seconds
+1. **Manual Refresh** triggers Python CLI to generate fresh snapshots
 2. **KV Store** caches data with hash-based change detection  
 3. **API Layer** provides intelligent data sectioning
-4. **AI Tools** access fresh market data on-demand
-5. **UI Components** display real-time market intelligence
+4. **AI Tools** access market data on-demand via chat tools
+5. **UI Components** display market overview and enable refresh control
+
+**Note**: The system uses on-demand data generation triggered by manual refresh button or chat queries, rather than continuous background polling.
 
 ## 🔐 Security Features
 
@@ -204,7 +218,8 @@ src/
 
 **Built with**: Next.js 14, TypeScript, Tailwind CSS, Direct OpenAI API, shadcn/ui  
 **Integration**: CryptoTechnicals Python CLI backend  
-**Version**: 0.4.1 - Deep Research Models with Progress Streaming
+**Version**: 0.4.1 - Deep Research Models with Progress Streaming  
+**Last Updated**: August 25, 2025 11:54 AM CT
 
 ## 🔗 Related Documentation
 - [Development Logs](./devlogs/) - Detailed development progress

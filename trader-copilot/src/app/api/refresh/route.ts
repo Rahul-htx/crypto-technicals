@@ -20,8 +20,9 @@ export async function POST(request: NextRequest) {
     console.log('🔄 Manual refresh triggered at:', refreshData.requested_at);
     
     // Directly execute Python CLI to generate fresh snapshot
+    const pythonCmd = process.env.PYTHON_CMD || 'python';
     const { stdout, stderr } = await execAsync(
-      'cd .. && python -m src.cli --verbose',
+      `cd .. && source venv/bin/activate && ${pythonCmd} -m src.cli --verbose`,
       { 
         timeout: 60000, // 60 second timeout
         env: { ...process.env, FORCE_REFRESH: 'true' }

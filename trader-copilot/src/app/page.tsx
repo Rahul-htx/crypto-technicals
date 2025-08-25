@@ -11,7 +11,7 @@ export default function Home() {
           {/* Fixed Left Sidebar */}
           <div className="w-96 flex-shrink-0 flex flex-col space-y-4 overflow-y-auto max-h-full">
             <div className="mb-6">
-              <h1 className="text-2xl font-bold mb-2">Trader Copilot</h1>
+              <h1 className="text-2xl font-bold mb-2">CryptoCortex</h1>
               <p className="text-muted-foreground text-sm">
                 AI-powered cryptocurrency trading assistant
               </p>

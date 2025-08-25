@@ -463,6 +463,4 @@ For questions, issues, or feature requests:
 ---
 
 **Author**: Rahul Bijlani  
-**Last Updated**: December 2023
-
-*Built with ❤️ for the crypto community*
+**Last Updated**: Aug 24 2025
