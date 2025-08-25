@@ -148,16 +148,27 @@ export function PriceTicker() {
   const refreshSnapshot = async () => {
     setIsRefreshing(true);
     try {
-      // Trigger refresh
-      await fetch('/api/refresh', {
+      console.log('🔄 Starting manual refresh...');
+      
+      // Trigger refresh (this now directly executes Python CLI)
+      const response = await fetch('/api/refresh', {
         method: 'POST',
         headers: getAuthHeaders()
       });
-
-      // Wait a moment then reload
-      setTimeout(loadSnapshot, 2000);
+      
+      if (response.ok) {
+        console.log('✅ Refresh completed, loading new snapshot...');
+        // Reload snapshot immediately since API waits for completion
+        await loadSnapshot();
+      } else {
+        const errorData = await response.json();
+        console.error('❌ Refresh failed:', errorData);
+        throw new Error(`Refresh failed: ${errorData.message || 'Unknown error'}`);
+      }
     } catch (error) {
       console.error('Failed to refresh snapshot:', error);
+      // Still try to reload in case there was a partial update
+      setTimeout(loadSnapshot, 1000);
     } finally {
       setIsRefreshing(false);
     }
@@ -209,7 +220,14 @@ export function PriceTicker() {
     <Card className="p-4">
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h3 className="font-medium text-sm">Live Prices</h3>
+          <div className="flex items-center space-x-2">
+            <h3 className="font-medium text-sm">Live Prices</h3>
+            {isRefreshing && (
+              <span className="text-xs text-blue-600 animate-pulse">
+                Fetching fresh data...
+              </span>
+            )}
+          </div>
           <div className="flex items-center space-x-2">
             <Badge variant="outline" className="text-xs">
               {lastSnapshotHash}
@@ -219,6 +237,7 @@ export function PriceTicker() {
               size="sm"
               onClick={togglePolling}
               className="text-xs px-2"
+              disabled={isRefreshing}
             >
               {autoRefreshEnabled ? '🟢 Auto' : '⭕ Manual'}
             </Button>
@@ -227,8 +246,9 @@ export function PriceTicker() {
               size="sm"
               onClick={refreshSnapshot}
               disabled={isRefreshing}
+              className={isRefreshing ? 'opacity-75' : ''}
             >
-              <RefreshCw className={`h-3 w-3 ${isRefreshing ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`h-3 w-3 ${isRefreshing ? 'animate-spin text-blue-600' : ''}`} />
             </Button>
           </div>
         </div>
