@@ -122,6 +122,45 @@ CryptoCortex integrates with the CryptoTechnicals engine:
 
 **Note**: The system uses on-demand data generation triggered by manual refresh button or chat queries, rather than continuous background polling.
 
+## 💾 Persistent Chat History
+
+CryptoCortex features a sophisticated **multi-month chat history system** that preserves conversation context across sessions:
+
+### Dynamic Context Loading
+- **Context Budget**: 200,000 tokens (configurable via `CONTEXT_BUDGET_TOKENS`)
+- **System Reserve**: 4,000 tokens reserved for system prompts and tools
+- **Multi-Month Spanning**: Automatically loads conversation history across multiple months
+- **Smart Clipping**: Walks files from newest to oldest, loading messages until token budget is reached
+
+### Storage Architecture
+- **NDJSON Format**: One file per month (`chat-2025-08.jsonl`) for efficient append-only writes
+- **Reverse Traversal**: Reads files bottom-to-top (newest messages first) for optimal performance
+- **Automatic Rotation**: New month = new file, old conversations automatically archived
+- **Human Readable**: Files can be opened and read with any text editor
+
+### API Endpoints
+- `GET /api/chat-history?mode=context` - Multi-month context-aware loading (default)
+- `GET /api/chat-history?mode=recent&limitTokens=50000` - Legacy single-month loading
+- `GET /api/chat-history?mode=stats` - Chat history statistics
+- `POST /api/chat-history` - Append new message
+- `DELETE /api/chat-history` - Clear current month (testing only)
+
+### Configuration Constants
+```typescript
+// Configurable in src/lib/chat-store.ts
+export const CONTEXT_BUDGET_TOKENS = 200_000;  // Total budget for context
+export const SYSTEM_RESERVE_TOKENS = 4_000;    // Reserved for system prompts
+```
+
+### Benefits
+- **Seamless Continuity**: Chat survives browser refreshes, server restarts, model switches
+- **Context Preservation**: AI can reference conversations from weeks or months ago
+- **Token Efficient**: Only loads what fits in the model's context window
+- **Performance Optimized**: O(1) append operations, efficient tail reads
+- **Future Proof**: Easily adjustable when model context windows increase
+
+**Example**: If you have 90k tokens in August and 80k in September, refreshing the UI in October will show ~170k tokens of seamless conversation history.
+
 ## 🔐 Security Features
 
 - **Basic Authentication**: Environment-based user credentials

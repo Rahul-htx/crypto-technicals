@@ -4,6 +4,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAuth } from '@/lib/auth';
 import { openaiTools, executeToolCall, buildSystemPrompt } from '@/lib/openai-direct';
+import { loadContext } from '@/lib/chat-store';
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
@@ -48,11 +49,27 @@ export async function POST(request: NextRequest) {
       return handleWebSearchModel(messages, actualModel, systemPrompt);
     }
     
-    // Build the messages array with system prompt for regular models
+    // Load server-side context for safety (prevents client manipulation)
+    const contextMessages = await loadContext();
+    console.log(`📖 Server-side context loaded: ${contextMessages.length} messages`);
+    
+    // Extract the new user message from client (should be the last one)
+    const newUserMessage = messages[messages.length - 1];
+    
+    // Build the messages array with server context + new user message
     const allMessages = [
       { role: 'system', content: systemPrompt },
-      ...messages
+      ...contextMessages,
+      newUserMessage
     ];
+    
+    console.log(`💬 Total context for LLM: ${allMessages.length - 1} messages (${contextMessages.length} history + 1 new)`);
+    
+    // Log token count estimate
+    const contextTokens = contextMessages.reduce((sum, msg) => {
+      return sum + Math.ceil(msg.content.length / 4);
+    }, 0);
+    console.log(`⚡ Context tokens loaded: ≈${contextTokens}`);
 
     // Create streaming response
     const encoder = new TextEncoder();
@@ -91,8 +108,18 @@ async function handleDeepResearch(
   systemPrompt: string
 ) {
   try {
+    // Load server-side context for safety
+    const contextMessages = await loadContext();
+    console.log(`📖 Deep research context loaded: ${contextMessages.length} messages`);
+    
+    // Extract the new user message from client
+    const newUserMessage = messages[messages.length - 1];
+    
+    // Combine context with new message
+    const allMessages = [...contextMessages, newUserMessage];
+    
     // Convert messages to input string for Responses API
-    const conversationHistory = messages
+    const conversationHistory = allMessages
       .map(msg => {
         if (msg.role === 'user') return `User: ${msg.content}`;
         if (msg.role === 'assistant') return `Assistant: ${msg.content}`;
@@ -354,8 +381,18 @@ async function handleWebSearchModel(
   systemPrompt: string
 ) {
   try {
+    // Load server-side context for safety
+    const contextMessages = await loadContext();
+    console.log(`📖 Web search context loaded: ${contextMessages.length} messages`);
+    
+    // Extract the new user message from client
+    const newUserMessage = messages[messages.length - 1];
+    
+    // Combine context with new message
+    const allMessages = [...contextMessages, newUserMessage];
+    
     // Convert messages to input string for Responses API
-    const conversationHistory = messages
+    const conversationHistory = allMessages
       .map(msg => {
         if (msg.role === 'user') return `User: ${msg.content}`;
         if (msg.role === 'assistant') return `Assistant: ${msg.content}`;

@@ -95,7 +95,33 @@ export function ChatDirect() {
   const [streamingContent, setStreamingContent] = useState('');
   const [progressState, setProgressState] = useState<ProgressEvent | null>(null);
   const [currentSection, setCurrentSection] = useState<string>('');
+  const [historyLoaded, setHistoryLoaded] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Load chat history on mount
+  useEffect(() => {
+    async function loadHistory() {
+      try {
+        const response = await fetch('/api/chat-history?mode=context', {
+          headers: getAuthHeaders()
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data.messages && data.messages.length > 0) {
+            setMessages(data.messages);
+            console.log(`📖 Loaded ${data.messages.length} messages from history`);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load chat history:', error);
+      } finally {
+        setHistoryLoaded(true);
+      }
+    }
+    
+    loadHistory();
+  }, []); // Only run once on mount
 
   // Auto-scroll to bottom whenever messages or streaming content changes
   useEffect(() => {
@@ -127,6 +153,21 @@ export function ChatDirect() {
     setStreamingContent('');
     setProgressState(null);
     setCurrentSection('');
+
+    // Save user message to history
+    try {
+      await fetch('/api/chat-history', {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({
+          role: 'user',
+          content: userMessage.content,
+          metadata: { tokens: Math.ceil(userMessage.content.length / 4) }
+        })
+      });
+    } catch (error) {
+      console.error('Failed to save user message:', error);
+    }
 
     try {
       const response = await fetch('/api/chat-direct', {
@@ -198,12 +239,29 @@ export function ChatDirect() {
               } else if (parsed.type === 'done') {
                 // Finalize the message
                 if (currentContent) {
-                  setMessages(prev => [...prev, {
-                    role: 'assistant',
+                  const assistantMessage = {
+                    role: 'assistant' as const,
                     content: currentContent,
                     timestamp: new Date().toISOString()
-                  }]);
+                  };
+                  setMessages(prev => [...prev, assistantMessage]);
                   setStreamingContent('');
+                  
+                  // Save assistant message to history
+                  try {
+                    await fetch('/api/chat-history', {
+                      method: 'POST',
+                      headers: getAuthHeaders(),
+                      body: JSON.stringify({
+                        role: 'assistant',
+                        content: currentContent,
+                        model: modelId,
+                        metadata: { tokens: Math.ceil(currentContent.length / 4) }
+                      })
+                    });
+                  } catch (error) {
+                    console.error('Failed to save assistant message:', error);
+                  }
                 }
                 setProgressState(null);
                 break;
@@ -237,17 +295,22 @@ export function ChatDirect() {
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0">
-        {messages.length === 0 && !streamingContent && (
+        {!historyLoaded ? (
+          <div className="text-center text-muted-foreground py-8">
+            <Loader2 className="h-8 w-8 mx-auto mb-2 animate-spin opacity-50" />
+            <p className="text-sm">Loading chat history...</p>
+          </div>
+        ) : messages.length === 0 && !streamingContent ? (
           <div className="text-center text-muted-foreground py-8">
             <Bot className="h-12 w-12 mx-auto mb-2 opacity-50" />
             <p className="text-sm">
               Ask me about cryptocurrency prices, market analysis, or trading strategies.
             </p>
             <p className="text-xs mt-2">
-              Using direct OpenAI API with dual-channel memory
+              Using direct OpenAI API with persistent chat history
             </p>
           </div>
-        )}
+        ) : null}
 
         {messages.map((message, index) => (
           <div
