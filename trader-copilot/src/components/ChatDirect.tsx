@@ -180,6 +180,12 @@ export function ChatDirect() {
               } else if (parsed.type === 'tool_call') {
                 // Show tool call in UI (optional)
                 console.log('Tool called:', parsed.name, parsed.args);
+                
+                // Auto-refresh thesis if it was updated
+                if (parsed.name === 'update_thesis' && parsed.result?.success) {
+                  // Trigger thesis reload in ThesisPanel
+                  window.dispatchEvent(new CustomEvent('thesisUpdated'));
+                }
               } else if (parsed.type === 'error') {
                 // Handle error from deep research
                 setMessages(prev => [...prev, {

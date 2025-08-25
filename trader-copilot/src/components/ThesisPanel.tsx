@@ -9,9 +9,32 @@ import { Badge } from '@/components/ui/badge';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { getAuthHeaders } from '@/lib/auth';
 
+// Helper function to format timestamps in CT timezone
+function formatTimestamp(isoString: string): string {
+  try {
+    const date = new Date(isoString);
+    return date.toLocaleString('en-US', {
+      timeZone: 'America/Chicago',
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    }) + ' CT';
+  } catch {
+    return isoString; // Fallback to original if parsing fails
+  }
+}
+
 // Helper function to format markdown text for thesis display
 function formatMarkdown(text: string): string {
   let formatted = text;
+  
+  // Handle timestamps - convert ISO dates to human readable CT format
+  formatted = formatted.replace(/\b\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z?\b/g, (match) => {
+    return formatTimestamp(match);
+  });
   
   // Handle headers
   formatted = formatted.replace(/^# (.+)$/gm, '<h1 class="text-lg font-bold mb-3 mt-4 first:mt-0">$1</h1>');
@@ -54,6 +77,17 @@ export function ThesisPanel() {
   useEffect(() => {
     // Load thesis on component mount
     loadThesis();
+    
+    // Listen for thesis updates from tool calls
+    const handleThesisUpdate = () => {
+      loadThesis();
+    };
+    
+    window.addEventListener('thesisUpdated', handleThesisUpdate);
+    
+    return () => {
+      window.removeEventListener('thesisUpdated', handleThesisUpdate);
+    };
   }, []);
 
   useEffect(() => {
