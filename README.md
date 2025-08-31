@@ -234,10 +234,14 @@ market_data:
 🖥️ Front-End UI (CryptoCortex)
 
 CryptoCortex is a Next.js/TypeScript web UI for CryptoTechnicals, featuring:
-	•	Dual-channel memory: LLM chat + heavy data snapshots.
-	•	Streaming AI analysis: Direct OpenAI API integration.
-	•	Persistent chat history: Survives browser/server restarts.
-	•	Security: Basic Auth, local-first deployment.
+	•	**NEW: Collapsible Interface**: Organized sidebar with AI Model, Investment Thesis, Market Intelligence sections
+	•	**NEW: Market Intelligence Panel**: Real-time display of core facts vs recent developments
+	•	**NEW: Header Integration**: Web Search toggle moved to header bar for better UX
+	•	Dual-channel memory: LLM chat + heavy data snapshots
+	•	Streaming AI analysis: Direct OpenAI API integration
+	•	Persistent chat history: Survives browser/server restarts
+	•	Hierarchical market intelligence with 200k token context
+	•	Security: Basic Auth, local-first deployment
 
 <details>
 <summary>🌐 <b>Setup Instructions</b></summary>
@@ -319,6 +323,14 @@ pytest -v          # Verbose
 <details>
 <summary>Click to expand full changelog</summary>
 
+
+v0.5.1 (2025-08-31) - UI Refactor: Collapsible Sections & Market Intel Expansion
+	•	**NEW UI**: Collapsible sidebar sections (AI Model, Investment Thesis, Market Intelligence)
+	•	**Enhanced Market Intel**: Visual separation of Core facts vs Recent developments
+	•	**Header Integration**: Web Search toggle moved to header bar with model context
+	•	**UX Improvements**: One section open at a time, preview text when collapsed
+	•	**Professional Design**: Color-coded sections, badges, timestamps, confidence scores
+	•	**API Integration**: New /api/market-intel endpoint with real-time updates
 
 v0.5.0 (2025-08-31) - Market Intelligence Integration
 	•	Hierarchical memory system: Core stable facts + Diff recent updates

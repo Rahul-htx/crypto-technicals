@@ -2,11 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { useSystemStore } from '@/lib/system-context';
-import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { ChevronDown, ChevronUp } from 'lucide-react';
 import { getAuthHeaders } from '@/lib/auth';
 
 // Helper function to format timestamps in CT timezone
@@ -71,7 +69,6 @@ export function ThesisPanel() {
   const [editedThesis, setEditedThesis] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [isCollapsed, setIsCollapsed] = useState(false);
   const [clientFormattedTime, setClientFormattedTime] = useState('');
 
   useEffect(() => {
@@ -160,80 +157,61 @@ export function ThesisPanel() {
   };
 
   return (
-    <Card className="p-4 mb-4">
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setIsCollapsed(!isCollapsed)}
-            className="flex items-center space-x-2 p-0 h-auto hover:bg-transparent"
-          >
-            <h3 className="font-medium text-sm">Investment Thesis</h3>
-            {isCollapsed ? (
-              <ChevronDown className="h-4 w-4" />
-            ) : (
-              <ChevronUp className="h-4 w-4" />
-            )}
-          </Button>
-          <div className="flex items-center space-x-2">
-            {systemCtx.updatedBy && (
-              <Badge variant="secondary" className="text-xs">
-                {systemCtx.updatedBy}
-              </Badge>
-            )}
-            {!isEditing && !isCollapsed && (
-              <Button variant="ghost" size="sm" onClick={startEditing}>
-                Edit
-              </Button>
-            )}
-          </div>
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-2">
+          {systemCtx.updatedBy && (
+            <Badge variant="secondary" className="text-xs">
+              {systemCtx.updatedBy}
+            </Badge>
+          )}
         </div>
-
-        {!isCollapsed && (
-          <>
-            {isEditing ? (
-              <div className="space-y-2">
-                <Textarea
-                  value={editedThesis}
-                  onChange={(e) => setEditedThesis(e.target.value)}
-                  placeholder="Enter your investment thesis..."
-                  className="min-h-[200px] text-sm"
-                />
-                <div className="flex space-x-2">
-                  <Button size="sm" onClick={saveThesis} disabled={isSaving}>
-                    {isSaving ? 'Saving...' : 'Save'}
-                  </Button>
-                  <Button variant="ghost" size="sm" onClick={cancelEditing}>
-                    Cancel
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <div className="text-sm">
-                {systemCtx.thesis ? (
-                  <div 
-                    className="bg-muted/30 p-3 rounded-lg"
-                    dangerouslySetInnerHTML={{ 
-                      __html: formatMarkdown(systemCtx.thesis) 
-                    }}
-                  />
-                ) : (
-                  <p className="text-muted-foreground text-sm">
-                    No thesis available. Click Edit to set one.
-                  </p>
-                )}
-              </div>
-            )}
-
-            {clientFormattedTime && (
-              <p className="text-xs text-muted-foreground">
-                Updated: {clientFormattedTime} CT
-              </p>
-            )}
-          </>
+        {!isEditing && (
+          <Button variant="ghost" size="sm" onClick={startEditing}>
+            Edit
+          </Button>
         )}
       </div>
-    </Card>
+
+      {isEditing ? (
+        <div className="space-y-2">
+          <Textarea
+            value={editedThesis}
+            onChange={(e) => setEditedThesis(e.target.value)}
+            placeholder="Enter your investment thesis..."
+            className="min-h-[200px] text-sm"
+          />
+          <div className="flex space-x-2">
+            <Button size="sm" onClick={saveThesis} disabled={isSaving}>
+              {isSaving ? 'Saving...' : 'Save'}
+            </Button>
+            <Button variant="ghost" size="sm" onClick={cancelEditing}>
+              Cancel
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div className="text-sm">
+          {systemCtx.thesis ? (
+            <div 
+              className="bg-muted/30 p-3 rounded-lg"
+              dangerouslySetInnerHTML={{ 
+                __html: formatMarkdown(systemCtx.thesis) 
+              }}
+            />
+          ) : (
+            <p className="text-muted-foreground text-sm">
+              No thesis available. Click Edit to set one.
+            </p>
+          )}
+        </div>
+      )}
+
+      {clientFormattedTime && (
+        <p className="text-xs text-muted-foreground">
+          Updated: {clientFormattedTime} CT
+        </p>
+      )}
+    </div>
   );
 }
