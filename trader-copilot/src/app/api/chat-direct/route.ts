@@ -3,7 +3,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAuth } from '@/lib/auth';
-import { openaiTools, executeToolCall, buildSystemPrompt } from '@/lib/openai-direct';
+import { openaiTools, executeToolCall, buildSystemPrompt, getAndClearNotifications } from '@/lib/openai-direct';
 import { loadContext } from '@/lib/chat-store';
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;

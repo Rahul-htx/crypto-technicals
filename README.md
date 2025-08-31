@@ -75,6 +75,7 @@ python -m src.cli --output-dir /my/output   # Custom output directory
 	•	Technical Analysis: OHLCV + 8 indicators
 	•	Fundamental Analysis: Tokenomics, dev activity, social metrics
 	•	Market Intelligence: Macro trends, sector rotation, dominance, liquidity
+	•	**NEW: Inline System Notifications**: Real-time feedback on tool operations within chat
 	•	**NEW: Hierarchical Memory System**: Core stable facts + recent market updates
 	•	**NEW: Post-Training Awareness**: Regulatory changes, market events after AI training cutoff
 	•	Real-Time Pricing: Live spot prices (<30s latency)
@@ -94,6 +95,12 @@ python -m src.cli --output-dir /my/output   # Custom output directory
 	•	**NEW**: "Add this market intelligence: Fed announced new crypto regulations"
 	•	**NEW**: "What post-training market events should I be aware of?"
 	•	**NEW**: "Promote the ETF inflow data to core market intelligence"
+	
+**System Notifications Appear Automatically:**
+	•	🔍 **Grey notifications** for data retrieval operations (market snapshots, coin data)
+	•	⚡ **Yellow notifications** for system changes (thesis updates, market intelligence edits)
+	•	🕒 **CT timezone timestamps** with human-friendly descriptions
+	•	📊 **Token usage tracking** and operation success confirmations
 
 ⸻
 
@@ -323,6 +330,16 @@ pytest -v          # Verbose
 <details>
 <summary>Click to expand full changelog</summary>
 
+
+v0.5.2 (2025-08-31) - Inline System Notifications & UI Reorganization
+	•	**NEW: Inline Notifications**: Real-time system feedback within chat timeline
+	•	**Severity-Based Styling**: HIGH (⚡ yellow) for mutations, NORMAL (🔍 grey) for reads
+	•	**Smart Deduplication**: 30-second window prevents notification spam  
+	•	**CT Timezone**: Human-friendly timestamps (MMM DD HH:MM AM/PM CT)
+	•	**Tool Coverage**: All operations trigger appropriate notifications automatically
+	•	**UI Reorganization**: Model selector and web search moved to chat header
+	•	**Component Renaming**: "Chat (Direct API)" → "CryptoCortex Chat"
+	•	**Header Cleanup**: Streamlined main header with focused branding
 
 v0.5.1 (2025-08-31) - UI Refactor: Collapsible Sections & Market Intel Expansion
 	•	**NEW UI**: Collapsible sidebar sections (AI Model, Investment Thesis, Market Intelligence)

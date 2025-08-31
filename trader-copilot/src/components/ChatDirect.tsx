@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { useSystemStore } from '@/lib/system-context';
+import { useSystemStore, MODELS } from '@/lib/system-context';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,6 +9,8 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Send, Bot, User, Loader2, ExternalLink } from 'lucide-react';
 import { getAuthHeaders } from '@/lib/auth';
+import { SystemNotification } from '@/types/notifications';
+import { NotificationCard } from '@/components/NotificationCard';
 
 interface Message {
   role: 'user' | 'assistant' | 'system';
@@ -88,7 +90,7 @@ function formatContent(content: string) {
 }
 
 export function ChatDirect() {
-  const { modelId, enableWebSearch } = useSystemStore();
+  const { modelId, enableWebSearch, setModelId, setEnableWebSearch } = useSystemStore();
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -96,7 +98,75 @@ export function ChatDirect() {
   const [progressState, setProgressState] = useState<ProgressEvent | null>(null);
   const [currentSection, setCurrentSection] = useState<string>('');
   const [historyLoaded, setHistoryLoaded] = useState(false);
+  const [notifications, setNotifications] = useState<SystemNotification[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Function to fetch notifications after tool calls
+  const fetchNotifications = async () => {
+    try {
+      console.log('🔍 Fetching notifications...');
+      const response = await fetch('/api/notifications', {
+        headers: getAuthHeaders()
+      });
+      
+      console.log('📡 Notification response status:', response.status);
+      const data = await response.json();
+      console.log('📡 Notification response data:', data);
+      
+      const { notifications } = data;
+      
+      if (notifications && notifications.length > 0) {
+        console.log('📢 Fetched notifications:', notifications.length, notifications);
+        setNotifications(prev => {
+          console.log('📢 Previous notifications:', prev.length);
+          const updated = [...prev, ...notifications];
+          console.log('📢 Updated notifications:', updated.length);
+          return updated;
+        });
+      } else {
+        console.log('📢 No notifications to fetch');
+      }
+    } catch (error) {
+      console.error('Failed to fetch notifications:', error);
+    }
+  };
+
+  // Helper function to create timeline with interleaved notifications
+  const createTimeline = () => {
+    const timeline: Array<{ type: 'message' | 'notifications'; data: any; timestamp: string }> = [];
+    
+    // Debug logging
+    console.log('Creating timeline with:', { 
+      messageCount: messages.length, 
+      notificationCount: notifications.length,
+      notifications: notifications.map(n => ({ id: n.id, timestamp: n.timestamp, description: n.description }))
+    });
+    
+    // Add all messages to timeline
+    messages.forEach((message, index) => {
+      timeline.push({
+        type: 'message',
+        data: { message, index },
+        timestamp: message.timestamp || new Date().toISOString()
+      });
+      
+      // If this is the LAST assistant message, show ALL pending notifications after it
+      // This is simpler and more reliable than trying to match timestamps
+      if (message.role === 'assistant' && index === messages.length - 1 && notifications.length > 0) {
+        timeline.push({
+          type: 'notifications',
+          data: notifications,
+          timestamp: notifications[0].timestamp
+        });
+        console.log('Added notifications after last assistant message:', notifications.length);
+      }
+    });
+    
+    // Sort timeline by timestamp
+    timeline.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+    
+    return timeline;
+  };
 
   // Load chat history on mount
   useEffect(() => {
@@ -262,6 +332,9 @@ export function ChatDirect() {
                   } catch (error) {
                     console.error('Failed to save assistant message:', error);
                   }
+                  
+                  // Fetch notifications after assistant message is complete
+                  await fetchNotifications();
                 }
                 setProgressState(null);
                 break;
@@ -289,8 +362,43 @@ export function ChatDirect() {
     <Card className="flex flex-col h-full">
       <div className="p-4 border-b flex-shrink-0">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Chat (Direct API)</h2>
-          <Badge variant="secondary">{modelId}</Badge>
+          <h2 className="text-lg font-semibold">CryptoCortex Chat</h2>
+          <div className="flex items-center gap-3">
+            {/* Model Picker */}
+            <div className="flex items-center space-x-2">
+              <label className="text-sm font-medium text-muted-foreground">Model:</label>
+              <select
+                value={modelId}
+                onChange={(e) => setModelId(e.target.value)}
+                className="bg-background border border-border rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              >
+                {Object.entries(MODELS).map(([id, label]) => (
+                  <option key={id} value={id}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            
+            {/* Web Search Toggle */}
+            {['o3', 'o3-pro', 'o4-mini', 'gpt-5'].includes(modelId) && (
+              <div className="flex items-center space-x-2">
+                <label className="flex items-center space-x-2 cursor-pointer text-sm">
+                  <input
+                    type="checkbox"
+                    checked={enableWebSearch}
+                    onChange={(e) => setEnableWebSearch(e.target.checked)}
+                    className="h-4 w-4"
+                  />
+                  <span>Web Search</span>
+                </label>
+              </div>
+            )}
+            
+            <Badge variant="outline" className="text-xs text-green-600">
+              Direct OpenAI API
+            </Badge>
+          </div>
         </div>
       </div>
 
@@ -312,37 +420,40 @@ export function ChatDirect() {
           </div>
         ) : null}
 
-        {messages.map((message, index) => (
-          <div
-            key={index}
-            className={`flex gap-3 ${
-              message.role === 'user' ? 'justify-end' : 'justify-start'
-            }`}
-          >
-            <div
-              className={`flex gap-3 max-w-[80%] ${
-                message.role === 'user' ? 'flex-row-reverse' : 'flex-row'
-              }`}
-            >
-              <div className="flex-shrink-0">
-                {message.role === 'user' ? (
-                  <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
-                    <User className="h-4 w-4 text-primary-foreground" />
-                  </div>
-                ) : (
-                  <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
-                    <Bot className="h-4 w-4" />
-                  </div>
-                )}
-              </div>
+        {createTimeline().map((item, timelineIndex) => {
+          if (item.type === 'message') {
+            const { message, index } = item.data;
+            return (
               <div
-                className={`rounded-lg px-4 py-2 ${
-                  message.role === 'user'
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted'
+                key={`message-${index}`}
+                className={`flex gap-3 ${
+                  message.role === 'user' ? 'justify-end' : 'justify-start'
                 }`}
               >
-                <div>
+                <div
+                  className={`flex gap-3 max-w-[80%] ${
+                    message.role === 'user' ? 'flex-row-reverse' : 'flex-row'
+                  }`}
+                >
+                  <div className="flex-shrink-0">
+                    {message.role === 'user' ? (
+                      <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
+                        <User className="h-4 w-4 text-primary-foreground" />
+                      </div>
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
+                        <Bot className="h-4 w-4" />
+                      </div>
+                    )}
+                  </div>
+                  <div
+                    className={`rounded-lg px-4 py-2 ${
+                      message.role === 'user'
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-muted'
+                    }`}
+                  >
+                    <div>
                   {message.role === 'user' ? (
                     <p className="text-sm whitespace-pre-wrap">{message.content}</p>
                   ) : (
@@ -359,7 +470,24 @@ export function ChatDirect() {
               </div>
             </div>
           </div>
-        ))}
+            );
+          } else if (item.type === 'notifications') {
+            // Render notification cards
+            const notificationList = item.data as SystemNotification[];
+            return (
+              <div key={`notifications-${timelineIndex}`} className="max-w-full px-4">
+                {notificationList.map(notification => (
+                  <NotificationCard 
+                    key={notification.id} 
+                    notification={notification}
+                    className="mb-2"
+                  />
+                ))}
+              </div>
+            );
+          }
+          return null;
+        })}
 
         {streamingContent && (
           <div className="flex gap-3 justify-start">

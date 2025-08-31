@@ -2,6 +2,55 @@
 // Maintains dual-channel memory architecture
 
 import { kv } from './kv';
+import { SystemNotification, getNotificationDescription, shouldTriggerNotification } from '@/types/notifications';
+
+// In-memory notification queue
+let notificationQueue: SystemNotification[] = [];
+
+// Helper function to enqueue notifications
+function enqueueNotification(toolName: string, action?: string, result?: any): void {
+  const severity = shouldTriggerNotification(toolName, action);
+  if (!severity) return;
+  
+  const notification: SystemNotification = {
+    id: `notif-${Date.now()}-${Math.random().toString(36).substr(2, 8)}`,
+    timestamp: new Date().toISOString(),
+    severity,
+    description: getNotificationDescription(toolName, action, result),
+    meta: {
+      tool_name: toolName,
+      action,
+      token_delta: result?.token_usage,
+      details: result
+    }
+  };
+  
+  // Deduplication: check for identical notifications within 30 seconds
+  const cutoff = Date.now() - 30000; // 30 seconds ago
+  const recent = notificationQueue.filter(n => 
+    new Date(n.timestamp).getTime() > cutoff &&
+    n.description === notification.description &&
+    n.meta?.tool_name === notification.meta?.tool_name
+  );
+  
+  if (recent.length === 0) {
+    notificationQueue.push(notification);
+    
+    // Keep only last 50 notifications (more than UI limit but prevents memory leaks)
+    if (notificationQueue.length > 50) {
+      notificationQueue = notificationQueue.slice(-50);
+    }
+    
+    console.log(`🔔 Notification queued: ${notification.severity} - ${notification.description}`);
+  }
+}
+
+// Function to get and clear notifications for a chat session
+export function getAndClearNotifications(): SystemNotification[] {
+  const notifications = [...notificationQueue];
+  notificationQueue = [];
+  return notifications;
+}
 
 // Tool definitions in OpenAI format (snake_case, strict schemas)
 export const openaiTools = [
@@ -150,7 +199,9 @@ export async function executeToolCall(name: string, args: any): Promise<any> {
           marketData[horizon] = json[horizon].market_overview;
         }
       }
-      return { meta: json.meta, market_data: marketData };
+      const result = { meta: json.meta, market_data: marketData };
+      enqueueNotification('get_market_snapshot', undefined, result);
+      return result;
     }
     
     case 'get_coin_snapshot': {
@@ -169,12 +220,16 @@ export async function executeToolCall(name: string, args: any): Promise<any> {
       if (Object.keys(coinData).length === 0) {
         return { error: `coin ${args.coin} not found` };
       }
-      return { coin: coinLower, data: coinData };
+      const result = { coin: coinLower, data: coinData };
+      enqueueNotification('get_coin_snapshot', undefined, result);
+      return result;
     }
     
     case 'get_full_snapshot': {
       const { json } = await kv.load();
-      return json || { error: 'snapshot unavailable' };
+      const result = json || { error: 'snapshot unavailable' };
+      if (json) enqueueNotification('get_full_snapshot', undefined, result);
+      return result;
     }
     
     case 'update_thesis': {
@@ -195,7 +250,9 @@ export async function executeToolCall(name: string, args: any): Promise<any> {
         
         await fs.mkdir(path.dirname(THESIS_FILE), { recursive: true });
         await fs.writeFile(THESIS_FILE, JSON.stringify(thesisData, null, 2));
-        return { success: true, message: 'Thesis updated successfully' };
+        const result = { success: true, message: 'Thesis updated successfully' };
+        enqueueNotification('update_thesis', undefined, result);
+        return result;
       } catch (error) {
         console.error('Failed to update thesis:', error);
         return { success: false, error: 'Failed to update thesis' };
@@ -226,6 +283,7 @@ export async function executeToolCall(name: string, args: any): Promise<any> {
           response.archived = [];
         }
         
+        enqueueNotification('get_market_intel', undefined, response);
         return response;
       } catch (error) {
         return { error: 'Failed to load market intelligence', details: error.message };
@@ -341,13 +399,18 @@ export async function executeToolCall(name: string, args: any): Promise<any> {
           // Write updated file
           await fs.writeFile(MARKET_INTEL_FILE, JSON.stringify(marketIntel, null, 2));
           
-          return {
+          const result = {
             success: true,
             action: args.action,
             token_usage: marketIntel.metadata.total_token_count,
             timestamp,
             details: args.action === 'prune_stale' ? { pruned_items: prunedCount } : undefined
           };
+          
+          // Enqueue notification for successful updates
+          enqueueNotification('update_market_intel', args.action, result);
+          
+          return result;
           
         } finally {
           // Always release the lock

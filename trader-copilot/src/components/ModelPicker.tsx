@@ -7,6 +7,10 @@ interface ModelPickerProps {
   hideWebSearch?: boolean;
 }
 
+interface HeaderModelPickerProps {
+  compact?: boolean;
+}
+
 export function ModelPicker({ hideWebSearch = false }: ModelPickerProps) {
   const { modelId, setModelId, enableWebSearch, setEnableWebSearch } = useSystemStore();
   
@@ -53,6 +57,28 @@ export function ModelPicker({ hideWebSearch = false }: ModelPickerProps) {
           </label>
         </div>
       )}
+    </div>
+  );
+}
+
+// Compact header version
+export function HeaderModelPicker({ compact = true }: HeaderModelPickerProps) {
+  const { modelId, setModelId } = useSystemStore();
+
+  return (
+    <div className="flex items-center space-x-2">
+      <label className="text-sm font-medium text-muted-foreground">Model:</label>
+      <select
+        value={modelId}
+        onChange={(e) => setModelId(e.target.value)}
+        className="bg-background border border-border rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+      >
+        {Object.entries(MODELS).map(([id, label]) => (
+          <option key={id} value={id}>
+            {label}
+          </option>
+        ))}
+      </select>
     </div>
   );
 }

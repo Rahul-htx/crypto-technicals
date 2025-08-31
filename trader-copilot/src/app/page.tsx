@@ -1,23 +1,17 @@
 'use client';
 
-import { ModelPicker } from '@/components/ModelPicker';
 import { ThesisPanel } from '@/components/ThesisPanel';
 import { PriceTicker } from '@/components/PriceTicker';
 import { ChatDirect } from '@/components/ChatDirect';
 import { MarketIntelPanel } from '@/components/MarketIntelPanel';
 import { CollapsibleSection } from '@/components/ui/collapsible-section';
-import { useSystemStore, MODELS } from '@/lib/system-context';
+import { useSystemStore } from '@/lib/system-context';
 import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 
 export default function Home() {
-  const { enableWebSearch, setEnableWebSearch, modelId } = useSystemStore();
   const [expandedSection, setExpandedSection] = useState<string>('prices'); // Only one section expanded at a time
   const [marketIntelPreview, setMarketIntelPreview] = useState<string>('Loading...');
-  
-  // Check if current model supports web search
-  const webSearchCapableModels = ['o3', 'o3-pro', 'o4-mini', 'gpt-5'];
-  const currentModelSupportsWebSearch = webSearchCapableModels.includes(modelId);
   
   const handleSectionToggle = (section: string) => {
     setExpandedSection(expandedSection === section ? '' : section);
@@ -36,26 +30,8 @@ export default function Home() {
           </div>
           
           <div className="flex items-center space-x-4">
-            {/* Web Search Toggle */}
-            {currentModelSupportsWebSearch && (
-              <div className="flex items-center space-x-2">
-                <label className="flex items-center space-x-2 cursor-pointer text-sm">
-                  <input
-                    type="checkbox"
-                    checked={enableWebSearch}
-                    onChange={(e) => setEnableWebSearch(e.target.checked)}
-                    className="h-4 w-4"
-                  />
-                  <span>Web Search</span>
-                  <Badge variant="outline" className="text-xs">
-                    {MODELS[modelId as keyof typeof MODELS]}
-                  </Badge>
-                </label>
-              </div>
-            )}
-            
             <Badge variant="outline" className="text-xs text-green-600">
-              Direct OpenAI API
+              CryptoCortex AI Assistant
             </Badge>
           </div>
         </div>
@@ -68,19 +44,6 @@ export default function Home() {
           <div className="w-96 flex-shrink-0 flex flex-col space-y-4 overflow-y-auto max-h-full">
             {/* Live Prices - Keep existing PriceTicker logic */}
             <PriceTicker />
-            
-            {/* AI Model Selection */}
-            <CollapsibleSection
-              title="AI Model"
-              description="Select the AI model for analysis"
-              isExpanded={expandedSection === 'model'}
-              onExpandedChange={() => handleSectionToggle('model')}
-              showInfo={true}
-              infoTooltip="Choose between different AI models with varying capabilities"
-              collapsedPreview={MODELS[modelId as keyof typeof MODELS]}
-            >
-              <ModelPicker hideWebSearch={true} />
-            </CollapsibleSection>
             
             {/* Investment Thesis */}
             <CollapsibleSection
