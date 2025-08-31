@@ -8,11 +8,15 @@ Absolutely. Here’s a full reorganization of your README, applying the structur
 A powerful Python command-line tool that provides **complete cryptocurrency market intelligence** by combining technical analysis, fundamental data, market sentiment, sector rotation analysis, and global market trends.  
 **Perfect for AI-powered trading systems, researchers, and analysts who need the most comprehensive crypto market context—automated and LLM-ready.**
 
+**NEW: CryptoCortex AI Trading Assistant** - Advanced web UI with persistent market intelligence, real-time data integration, and AI-powered analysis featuring hierarchical memory system for post-training market events.
+
 ---
 
 ## 🚀 TL;DR
 
 - Instantly generate technical, fundamental, and market intelligence snapshots for any crypto asset.
+- **NEW**: AI Trading Assistant (CryptoCortex) with hierarchical market intelligence memory system
+- **NEW**: Persistent awareness of post-training market events, regulatory changes, and trading principles
 - Aggregated, LLM-optimized outputs (JSON, SQLite) with live spot prices, sector rotation, liquidity, and more.
 - Designed for seamless AI integration, advanced human workflows, and pro-grade research.
 
@@ -71,6 +75,8 @@ python -m src.cli --output-dir /my/output   # Custom output directory
 	•	Technical Analysis: OHLCV + 8 indicators
 	•	Fundamental Analysis: Tokenomics, dev activity, social metrics
 	•	Market Intelligence: Macro trends, sector rotation, dominance, liquidity
+	•	**NEW: Hierarchical Memory System**: Core stable facts + recent market updates
+	•	**NEW: Post-Training Awareness**: Regulatory changes, market events after AI training cutoff
 	•	Real-Time Pricing: Live spot prices (<30s latency)
 	•	LLM-Ready Exports: Structured JSON/CSV/SQLite for AI, visual charts
 	•	Combined Snapshots: Multi-timeframe, freshness-aware files
@@ -79,12 +85,15 @@ python -m src.cli --output-dir /my/output   # Custom output directory
 ⸻
 
 💡 Usage Examples
-	•	“Analyze current ETH technicals and provide entry points”
-	•	“Compare BTC and SOL momentum indicators”
-	•	“What’s the overall market sentiment based on dominance?”
-	•	“Show me the latest snapshot for just Bitcoin”
-	•	“Update my thesis: focusing on Layer 1 scaling solutions”
-	•	“Refresh market data and analyze changes”
+	•	"Analyze current ETH technicals and provide entry points"
+	•	"Compare BTC and SOL momentum indicators"
+	•	"What's the overall market sentiment based on dominance?"
+	•	"Show me the latest snapshot for just Bitcoin"
+	•	"Update my thesis: focusing on Layer 1 scaling solutions"
+	•	"Refresh market data and analyze changes"
+	•	**NEW**: "Add this market intelligence: Fed announced new crypto regulations"
+	•	**NEW**: "What post-training market events should I be aware of?"
+	•	**NEW**: "Promote the ETF inflow data to core market intelligence"
 
 ⸻
 
@@ -110,6 +119,11 @@ data/
 │   ├── latest_snapshot.json           # Combined, all-horizon snapshot
 └── chat/
     └── chat-YYYY-MM.jsonl             # Multi-month chat history
+
+trader-copilot/data/                   # NEW: CryptoCortex AI Assistant Data
+├── market_intel.json                  # Hierarchical market intelligence
+├── market_intel_history/              # Audit trail snapshots  
+└── thesis.json                        # Investment thesis
 
 <details>
 <summary>📈 <b>See Sample Output JSON</b></summary>
@@ -305,6 +319,14 @@ pytest -v          # Verbose
 <details>
 <summary>Click to expand full changelog</summary>
 
+
+v0.5.0 (2025-08-31) - Market Intelligence Integration
+	•	Hierarchical memory system: Core stable facts + Diff recent updates
+	•	Post-training market event awareness for AI assistant
+	•	Dynamic market intelligence tools (get_market_intel, update_market_intel)
+	•	Automated promotion logic from diff to core facts
+	•	File locking, audit trails, and concurrency safety
+	•	Token-efficient system prompt integration (~220 tokens)
 
 v0.4.1 (2025-08-25) - Dynamic Multi-Month Chat History
 	•	Persistent chat (NDJSON), 200k-token context, cross-session

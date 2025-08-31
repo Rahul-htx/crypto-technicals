@@ -1,0 +1,65 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "MarketIntel",
+  "type": "object",
+  "required": ["version", "last_updated", "core", "diff", "metadata"],
+  "properties": {
+    "version": { "type": "number", "const": 2 },
+    "last_updated": { "type": "string", "format": "date-time" },
+    "updated_by": { "type": "string" },
+    "core": {
+      "type": "object",
+      "required": ["last_verified", "items"],
+      "properties": {
+        "last_verified": { "type": "string", "format": "date-time" },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "content", "category", "last_verified", "reference_count"],
+            "properties": {
+              "id": { "type": "string", "pattern": "^core-\\d+$" },
+              "content": { "type": "string", "minLength": 10, "maxLength": 500 },
+              "category": { "type": "string", "enum": ["regulatory", "principle", "market_structure", "macro"] },
+              "last_verified": { "type": "string", "format": "date-time" },
+              "reference_count": { "type": "integer", "minimum": 0 }
+            }
+          }
+        }
+      }
+    },
+    "diff": {
+      "type": "object",
+      "required": ["items"],
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "content", "created_at", "hit_count", "confidence", "promotion_eligible"],
+            "properties": {
+              "id": { "type": "string", "pattern": "^diff-\\d+$" },
+              "content": { "type": "string", "minLength": 10, "maxLength": 500 },
+              "created_at": { "type": "string", "format": "date-time" },
+              "hit_count": { "type": "integer", "minimum": 0 },
+              "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+              "promotion_eligible": { "type": "boolean" },
+              "source": { "type": "string", "format": "uri" }
+            }
+          }
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "required": ["core_token_count", "diff_token_count", "total_token_count"],
+      "properties": {
+        "core_token_count": { "type": "integer", "minimum": 0 },
+        "diff_token_count": { "type": "integer", "minimum": 0 },
+        "total_token_count": { "type": "integer", "minimum": 0 },
+        "last_curation_run": { "type": "string", "format": "date-time" },
+        "next_curation_due": { "type": "string", "format": "date-time" }
+      }
+    }
+  }
+}

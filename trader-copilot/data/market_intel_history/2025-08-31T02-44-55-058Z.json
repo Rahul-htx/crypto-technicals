@@ -1,0 +1,83 @@
+{
+  "version": 2,
+  "last_updated": "2025-08-31T07:00:00Z",
+  "updated_by": "manual",
+  "core": {
+    "last_verified": "2025-08-31T07:00:00Z",
+    "items": [
+      {
+        "id": "core-001",
+        "content": "Risk management: Never add to losing altcoin positions; mandatory stops except BTC accumulation zones",
+        "category": "principle",
+        "last_verified": "2025-08-31T07:00:00Z",
+        "reference_count": 23
+      },
+      {
+        "id": "core-002",
+        "content": "Entry criteria: Minimum 8/10 conviction (40% macro, 30% technicals, 20% on-chain, 10% sentiment)",
+        "category": "principle",
+        "last_verified": "2025-08-31T07:00:00Z",
+        "reference_count": 31
+      },
+      {
+        "id": "core-003",
+        "content": "Bitcoin dominance >60% signals risk-off; <40% indicates full risk-on altcoin season",
+        "category": "market_structure",
+        "last_verified": "2025-08-31T07:00:00Z",
+        "reference_count": 15
+      },
+      {
+        "id": "core-004",
+        "content": "DXY (US Dollar Index) strength typically correlates with crypto weakness; monitor 100-105 key levels",
+        "category": "macro",
+        "last_verified": "2025-08-31T07:00:00Z",
+        "reference_count": 18
+      },
+      {
+        "id": "core-005",
+        "content": "Layer 1 rotation pattern: ETH → SOL → ADA/AVAX → smaller caps during bull phases",
+        "category": "market_structure",
+        "last_verified": "2025-08-31T07:00:00Z",
+        "reference_count": 12
+      }
+    ]
+  },
+  "diff": {
+    "items": [
+      {
+        "id": "diff-001",
+        "content": "Fed maintains restrictive monetary policy stance through Q3 2025, keeping crypto risk assets under pressure",
+        "created_at": "2025-08-31T06:00:00Z",
+        "hit_count": 2,
+        "confidence": 0.9,
+        "promotion_eligible": false,
+        "source": "https://www.federalreserve.gov/newsevents/pressreleases/monetary20250830a.htm"
+      },
+      {
+        "id": "diff-002",
+        "content": "Bitcoin ETF flows showing first weekly inflows after 4-week outflow streak, signaling potential sentiment shift",
+        "created_at": "2025-08-30T16:00:00Z",
+        "hit_count": 5,
+        "confidence": 0.85,
+        "promotion_eligible": true,
+        "source": "https://farside.co.uk/btc/"
+      },
+      {
+        "id": "diff-003",
+        "content": "Solana ecosystem seeing increased DEX volume and new protocol launches despite broader market weakness",
+        "created_at": "2025-08-29T14:00:00Z",
+        "hit_count": 3,
+        "confidence": 0.75,
+        "promotion_eligible": false,
+        "source": "https://dune.com/solana/solana-ecosystem"
+      }
+    ]
+  },
+  "metadata": {
+    "core_token_count": 487,
+    "diff_token_count": 392,
+    "total_token_count": 879,
+    "last_curation_run": "2025-08-31T06:00:00Z",
+    "next_curation_due": "2025-08-31T10:00:00Z"
+  }
+}
